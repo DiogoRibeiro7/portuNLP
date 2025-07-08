@@ -1,0 +1,21 @@
+---
+title: "Cleaning Social Media Text"
+author: "Diogo Ribeiro"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Cleaning Social Media Text}
+  %\VignetteEngine{rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This vignette demonstrates the `clean_social()` pipeline for removing emoji,
+normalizing accents, and mapping slang.
+
+```{r}
+library(portuNLP)
+clean_social("gosto mt disto 😎", custom_map = c(mt = "muito"))
+```

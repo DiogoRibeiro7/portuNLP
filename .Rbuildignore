@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.github$
+^tests$
+^poetry.lock$
+^pyproject.toml$
+^portunlp/
+^setup\.sh$
+^vignettes/.*\.html$
+^docs$

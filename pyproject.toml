@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "portunlp"
+version = "0.0.0"
+description = "Python helpers for portuNLP R package"
+authors = ["Diogo Ribeiro <diogo.debastos.ribeiro@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+spacy = "*"
+
+[tool.pytest.ini_options]
+testpaths = ["portunlp/tests"]
+
+[build-system]
+requires = ["poetry-core>=1.1.0"]
+build-backend = "poetry.core.masonry.api"

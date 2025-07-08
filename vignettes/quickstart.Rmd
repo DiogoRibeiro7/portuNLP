@@ -1,0 +1,22 @@
+---
+title: "Quickstart: Text Normalization"
+author: "Diogo Ribeiro"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quickstart: Text Normalization}
+  %\VignetteEngine{rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This vignette shows how to normalize Portuguese text with `portuNLP`.
+
+```{r}
+library(portuNLP)
+normalize_text("Ação e emoção", correct = TRUE)
+```
+
+You can also remove punctuation and apply custom dictionaries if needed.

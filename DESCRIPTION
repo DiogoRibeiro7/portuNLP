@@ -1,0 +1,22 @@
+Package: portuNLP
+Type: Package
+Title: Portuguese Text Processing Toolkit
+Version: 0.0.0.9000
+Authors@R: c(person(given = "Diogo", family = "Ribeiro",
+  email = "dfr@esmad.ipp.pt", role = c("aut", "cre"),
+  comment = c(ORCID = "https://orcid.org/0009-0001-2022-7072",
+              affiliation = "ESMAD - Instituto Politécnico do Porto")))
+Author: Diogo Ribeiro [aut]
+Maintainer: Diogo Ribeiro <dfr@esmad.ipp.pt>
+Description: Comprehensive tools for processing Portuguese text including normalization, tokenization, lemmatization, and social-media cleaning.
+License: MIT
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Suggests: testthat (>= 3.0.0)
+Imports: stringi,
+        reticulate
+URL: https://github.com/DiogoRibeiro7/portuNLP
+BugReports: https://github.com/DiogoRibeiro7/portuNLP/issues
+

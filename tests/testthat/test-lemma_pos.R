@@ -9,7 +9,7 @@ test_that("lemmatize_pt uses spaCy", {
 })
 
 test_that("pos_tag_pt uses spaCy", {
-  tags <- pos_tag_pt(c("O", "gato", "dorme"))
+  tags <- pos_tag_pt(c("O", "gato", "dorme"), universal = TRUE)
   expect_true(is.character(tags))
   expect_equal(length(tags), 3)
 })

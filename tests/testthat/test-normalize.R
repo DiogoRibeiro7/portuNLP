@@ -5,4 +5,5 @@ test_that("normalize_text works", {
 
 test_that("apply_orth_rules replaces variants", {
   expect_equal(apply_orth_rules("acção"), "ação")
+  expect_equal(apply_orth_rules("electrico"), "elétrico")
 })

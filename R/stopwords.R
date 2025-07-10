@@ -12,7 +12,7 @@
 #' get_stopwords(extra = c("novapalavra"))
 #' @export
 get_stopwords <- function(extra = NULL, omit = NULL) {
-  words <- .stopwords_pt_default
+  words <- stopwords_pt
   if (!is.null(extra)) {
     words <- unique(c(words, extra))
   }
@@ -22,7 +22,12 @@ get_stopwords <- function(extra = NULL, omit = NULL) {
   return(words)
 }
 
-# Internal default stopword list
-.stopwords_pt_default <- c(
-  "a", "o", "e", "de", "do", "da", "um", "uma", "para", "com"
-)
+#' Portuguese stopword list
+#'
+#' A small sample of common Portuguese stopwords used by `get_stopwords()`.
+#'
+#' @format Character vector of stopwords.
+#' @source Derived from freely available lists.
+#' @examples
+#' data(stopwords_pt)
+"stopwords_pt"

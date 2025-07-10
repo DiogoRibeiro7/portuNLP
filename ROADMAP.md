@@ -44,6 +44,7 @@ This document details the development plan to build and publish **portuNLP** on 
 
    * **FreeLing**: Wrap C++ commands via Rcpp.
    * **spaCy**: Use **reticulate** to call Python models if FreeLing missing.
+   * Minimal C++ tokenizer built with CMake and tested via `ctest`.
 
 2. **Normalization Module**
 
@@ -58,8 +59,8 @@ This document details the development plan to build and publish **portuNLP** on 
 
 4. **POS Tagging**
 
-   * `pos_tag_pt(tokens)`: return tags using FreeLing or spaCy.
-   * Standardize tagset and provide mapping table.
+   * `pos_tag_pt(tokens, universal = FALSE)`: return tags using FreeLing or spaCy, optionally mapping to the Universal tagset.
+   * Standardize tagset and provide mapping table. Implemented `map_pos_tags()` and added a `universal` argument to `pos_tag_pt()` for direct conversion.
 
 ## Phase 3: Portuguese Resources (Weeks 7–8)
 
@@ -70,7 +71,7 @@ This document details the development plan to build and publish **portuNLP** on 
 
 2. **Dictionaries & Rules**
 
-   * Include orthographic rule set for European and Brazilian variants.
+   * Include orthographic rule set for European and Brazilian variants. **Implemented** via `orth_rules` and `apply_orth_rules()`.
    * Custom dictionary loader: `load_dict(path)`.
 
 ## Phase 4: Social Media Cleaning (Weeks 9–10)

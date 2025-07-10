@@ -1,9 +1,10 @@
 import pytest
-import importlib
+import spacy
 
-pytest.importorskip("spacy")
+if getattr(spacy, "__fake__", False):
+    pytest.skip("spaCy not available", allow_module_level=True)
 
-from portunlp import spacy_tokenize, spacy_lemmatize, spacy_pos_tag
+from portunlp import spacy_lemmatize, spacy_pos_tag, spacy_tokenize
 
 
 @pytest.fixture(scope="module")

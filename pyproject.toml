@@ -6,8 +6,8 @@ authors = ["Diogo Ribeiro <diogo.debastos.ribeiro@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.8"
-spacy = "*"
+python = ">=3.10,<3.13"
+spacy = ">=3.7,<4.0"
 
 [tool.pytest.ini_options]
 testpaths = ["portunlp/tests"]

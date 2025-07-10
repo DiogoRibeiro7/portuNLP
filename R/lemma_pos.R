@@ -35,13 +35,15 @@ lemmatize_pt <- function(tokens) {
 #' function degrades gracefully.
 #'
 #' @param tokens Character vector of tokens.
+#' @param universal Logical; if `TRUE`, convert tags to the Universal tagset using
+#'   `map_pos_tags()`.
 #'
 #' @return Character vector of POS tags corresponding to input tokens.
 #' @examples
 #' pos_tag_pt(c("O", "gato", "dorme"))
 #'
 #' @export
-pos_tag_pt <- function(tokens) {
+pos_tag_pt <- function(tokens, universal = FALSE) {
   if (!is.character(tokens)) {
     stop("`tokens` must be a character vector")
   }
@@ -49,10 +51,16 @@ pos_tag_pt <- function(tokens) {
   if (reticulate::py_module_available("portunlp")) {
     mod <- reticulate::import("portunlp")
     tags <- mod$spacy_pos_tag(paste(tokens, collapse = " "))
+    if (isTRUE(universal)) {
+      tags <- map_pos_tags(tags)
+    }
     return(tags)
   }
 
   tags <- rep("UNK", length(tokens))
+  if (isTRUE(universal)) {
+    tags <- map_pos_tags(tags)
+  }
   return(tags)
 }
 

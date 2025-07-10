@@ -2,11 +2,13 @@
 
 This module provides minimal wrappers around spaCy for Portuguese NLP tasks.
 """
+
 from __future__ import annotations
 
 import spacy
 
 _nlp = None
+
 
 def _load_model() -> spacy.language.Language:
     """Load the spaCy Portuguese model lazily.
@@ -19,8 +21,12 @@ def _load_model() -> spacy.language.Language:
         try:
             _nlp = spacy.load("pt_core_news_sm")
         except OSError:
-            raise OSError("spaCy Portuguese model not found. Run 'python -m spacy download pt_core_news_sm'.")
+            raise OSError(
+                "spaCy Portuguese model not found. "
+                "Run 'python -m spacy download pt_core_news_sm'."
+            )
     return _nlp
+
 
 def spacy_tokenize(text: str) -> list[str]:
     """Tokenize text using spaCy.
@@ -34,6 +40,7 @@ def spacy_tokenize(text: str) -> list[str]:
     nlp = _load_model()
     doc = nlp(text)
     return [token.text for token in doc]
+
 
 def spacy_lemmatize(text: str) -> list[str]:
     """Lemmatize text using spaCy.

@@ -16,6 +16,8 @@
 * Added `apply_orth_rules()` for optional spell correction using `orth_rules`.
 * `normalize_text()` gains a `correct` argument to apply orthographic rules.
 * Included `pos_map` dataset mapping spaCy POS tags to Universal tags.
+* Added `map_pos_tags()` helper to convert spaCy tags to the Universal tagset.
+* `pos_tag_pt()` gains a `universal` argument to optionally return Universal POS tags.
 * Added introductory vignettes for text normalization and social-media
   cleaning and a basic `pkgdown` configuration.
 * Continuous integration workflow now runs only when changes merge to `main`.
@@ -24,3 +26,9 @@
   build manuals without errors.
 * Added `texlive-fonts-extra` to ensure the `inconsolata` font is available.
 * Setup script now installs R dependencies via apt to avoid compilation errors.
+* Setup script installs `pre-commit` to run code formatting hooks.
+* Added a simple C++ tokenizer with CMake build and `ctest` integration.
+* Raised minimum Python version to 3.10 and documented the change.
+* Expanded `pos_map` dataset with additional tag mappings.
+* Expanded Portuguese stopword list and exported as `stopwords_pt`.
+* Added more orthographic variants to `orth_rules`.

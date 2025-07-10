@@ -50,7 +50,7 @@ apply_orth_rules <- function(text, rules = orth_rules) {
 
 #' Sample orthographic rules for Portuguese variants
 #'
-#' A minimal data frame illustrating orthographic differences
+#' A small data frame illustrating common orthographic differences
 #' between European (EU) and Brazilian (BR) Portuguese.
 #'
 #' @format A data frame with columns:

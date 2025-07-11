@@ -28,3 +28,7 @@ def test_spacy_pos_tag(sample_text):
     tags = spacy_pos_tag(sample_text)
     assert isinstance(tags, list)
     assert len(tags) == len(sample_text.split())
+
+
+def test_tokenize_empty():
+    assert spacy_tokenize("") == []

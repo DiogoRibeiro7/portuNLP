@@ -8,6 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
 spacy = ">=3.7,<4.0"
+numpy = ">=1.26,<2.0"
 
 [tool.pytest.ini_options]
 testpaths = ["portunlp/tests"]
@@ -15,3 +16,10 @@ testpaths = ["portunlp/tests"]
 [build-system]
 requires = ["poetry-core>=1.1.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+python_version = "3.12"
+
+[[tool.mypy.overrides]]
+module = "spacy.*"
+ignore_missing_imports = true

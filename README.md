@@ -64,10 +64,22 @@ mkdir -p build && cd build
 cmake ..
 make
 ctest --output-on-failure
+cd ..
+Rscript -e 'devtools::build_vignettes()'
+Rscript -e 'pkgdown::build_site()'
 ```
 
-Continuous integration tests run automatically when changes are merged to the
-`main` branch.
+These steps mirror the automated checks in the CI pipeline. The C++ tokenizer
+is compiled with CMake and its tests executed via `ctest`. R also generates
+`src/symbols.rds` during installation; this build artifact is listed in
+`.gitignore`.
+
+Ensure CMake (>=3.15) and a C++17 compiler are installed. The C++ tokenizer
+tests are built automatically during `make` and executed with `ctest`.
+
+Continuous integration runs pre-commit for formatting, builds the C++ tokenizer
+with CMake, executes the `ctest` suite, and performs `R CMD check` and Python
+tests whenever changes land on the `main` branch.
 
 See `ROADMAP.md` for future plans and ongoing development stages.
 
@@ -83,3 +95,4 @@ If `pkgdown` is installed, you can build the documentation website with:
 ```R
 pkgdown::build_site()
 ```
+This step also verifies that the vignette examples compile without errors.

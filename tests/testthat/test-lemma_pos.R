@@ -1,6 +1,9 @@
 library(testthat)
 
 skip_if_not(reticulate::py_module_available("portunlp"))
+skip_if_not(reticulate::py_module_available("spacy"))
+skip_if_not(reticulate::py_eval("__import__('spacy').util.is_package('pt_core_news_sm')"),
+           message = "spaCy Portuguese model missing")
 
 test_that("lemmatize_pt uses spaCy", {
   lemmas <- lemmatize_pt(c("gatos", "bonitos"))

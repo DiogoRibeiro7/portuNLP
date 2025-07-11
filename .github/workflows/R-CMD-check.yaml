@@ -21,6 +21,19 @@ jobs:
         run: |
           pip install poetry
           poetry install
+      - name: Pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
+      - name: Build C++ tests
+        run: |
+          mkdir build && cd build
+          cmake ..
+          make
+      - name: CTest
+        run: |
+          cd build
+          ctest --output-on-failure
       - name: Check
         run: |
           R CMD build . --no-build-vignettes --no-manual

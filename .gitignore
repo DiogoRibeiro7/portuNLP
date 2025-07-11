@@ -27,3 +27,6 @@ __pycache__/
 .pytest_cache/
 
 build/
+Testing/
+
+src/symbols.rds

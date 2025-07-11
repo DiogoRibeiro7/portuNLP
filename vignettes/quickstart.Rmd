@@ -20,3 +20,16 @@ normalize_text("Ação e emoção", correct = TRUE)
 ```
 
 You can also remove punctuation and apply custom dictionaries if needed.
+
+```{r}
+normalize_text("Olá, Mundo!", remove_punct = TRUE)
+```
+
+After normalizing text you may want to tokenize the results. Tokenization
+facilitates later steps such as lemmatization and part-of-speech tagging.
+
+```{r}
+tokens <- tokenize_pt("Gosto de R e Python.")
+lemmatize_pt(unlist(tokens))
+pos_tag_pt(unlist(tokens), universal = TRUE)
+```

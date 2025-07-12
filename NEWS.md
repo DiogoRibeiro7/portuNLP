@@ -32,3 +32,4 @@
 * Expanded `pos_map` dataset with additional tag mappings.
 * Expanded Portuguese stopword list and exported as `stopwords_pt`.
 * Added more orthographic variants to `orth_rules`.
+* Added benchmark script for tokenization performance.

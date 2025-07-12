@@ -83,3 +83,12 @@ If `pkgdown` is installed, you can build the documentation website with:
 ```R
 pkgdown::build_site()
 ```
+
+## Benchmarks
+
+A benchmark script `benchmarks/benchmark_tokenize.R` measures tokenization speed.
+Run it with:
+
+```R
+source("benchmarks/benchmark_tokenize.R")
+```

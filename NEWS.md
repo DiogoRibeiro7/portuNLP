@@ -34,3 +34,4 @@
 * Added more orthographic variants to `orth_rules`.
 * Added benchmark script for tokenization performance.
 * `benchmark_tokenize()` now reports tokens-per-second throughput.
+* Added tests for non-UTF8 input.

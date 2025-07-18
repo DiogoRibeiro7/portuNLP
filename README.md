@@ -86,9 +86,11 @@ pkgdown::build_site()
 
 ## Benchmarks
 
-A benchmark script `benchmarks/benchmark_tokenize.R` measures tokenization speed.
-Run it with:
+The script `benchmarks/benchmark_tokenize.R` provides a
+`benchmark_tokenize()` helper that reports microbenchmark statistics and
+the median tokenization throughput. Run it with:
 
 ```R
 source("benchmarks/benchmark_tokenize.R")
+benchmark_tokenize(rep("O elétrico está em ação.", 1000))
 ```

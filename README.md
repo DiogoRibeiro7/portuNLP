@@ -1,5 +1,7 @@
 # portuNLP
 
+![R-CMD-check](https://github.com/DiogoRibeiro7/portuNLP/actions/workflows/R-CMD-check.yaml/badge.svg)
+
 `portuNLP` is an R package for Portuguese text processing with a small Python
 helper used for spaCy integration. **Python 3.10+ is required.** The toolkit currently includes:
 

@@ -35,3 +35,4 @@
 * Added benchmark script for tokenization performance.
 * `benchmark_tokenize()` now reports tokens-per-second throughput.
 * Added tests for non-UTF8 input.
+* Added GitHub Actions workflow for R CMD check.

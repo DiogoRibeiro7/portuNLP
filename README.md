@@ -1,11 +1,13 @@
 # portuNLP
 
+![R-CMD-check](https://github.com/DiogoRibeiro7/portuNLP/actions/workflows/R-CMD-check.yaml/badge.svg)
+
 `portuNLP` is an R package for Portuguese text processing with a small Python
 helper used for spaCy integration. **Python 3.10+ is required.** The toolkit currently includes:
 
 - Text normalization via `normalize_text()`
 - Tokenization with `tokenize_pt()`
-- Optional C++ tokenizer built with CMake (`split_words()`)
+- Optional C++ tokenizer built with CMake (`split_words()`), accessible in R via `tokenize_cpp()`. It uses a regex-based approach to strip punctuation and lowercase tokens.
 - Lemmatization and POS tagging using spaCy (`lemmatize_pt()`, `pos_tag_pt()`)
 - Portuguese stopword handling through `get_stopwords()`
 - Loading custom dictionaries using `load_dict()`
@@ -14,6 +16,16 @@ helper used for spaCy integration. **Python 3.10+ is required.** The toolkit cur
   `map_slang()`, and the combined `clean_social()`
 - POS tag mapping with `map_pos_tags()` or `pos_tag_pt(universal = TRUE)`
 - Sample datasets such as `orth_rules`, `slang_map`, `stopwords_pt`, and `pos_map` accessible via `data(orth_rules)`, `data(slang_map)`, or `data(stopwords_pt)`
+  The stopword list merges entries from the NLTK collection and
+  [stopwords‑iso](https://github.com/stopwords-iso/stopwords-pt). The slang map
+  is derived from the open-source dataset at
+  <https://github.com/fnlp/slang-dict>.
+
+Example using the C++ tokenizer:
+
+```R
+tokenize_cpp("O gato dorme")
+```
 
 ## Installation
 
@@ -69,17 +81,9 @@ Rscript -e 'devtools::build_vignettes()'
 Rscript -e 'pkgdown::build_site()'
 ```
 
-These steps mirror the automated checks in the CI pipeline. The C++ tokenizer
-is compiled with CMake and its tests executed via `ctest`. R also generates
-`src/symbols.rds` during installation; this build artifact is listed in
-`.gitignore`.
-
-Ensure CMake (>=3.15) and a C++17 compiler are installed. The C++ tokenizer
-tests are built automatically during `make` and executed with `ctest`.
-
-Continuous integration runs pre-commit for formatting, builds the C++ tokenizer
-with CMake, executes the `ctest` suite, and performs `R CMD check` and Python
-tests whenever changes land on the `main` branch.
+Continuous integration tests run automatically when changes are merged to the
+`main` branch. The GitHub Actions workflow assumes R is available; locally you
+can install it along with other system dependencies by running `./setup.sh`.
 
 See `ROADMAP.md` for future plans and ongoing development stages.
 
@@ -95,4 +99,14 @@ If `pkgdown` is installed, you can build the documentation website with:
 ```R
 pkgdown::build_site()
 ```
-This step also verifies that the vignette examples compile without errors.
+
+## Benchmarks
+
+The script `benchmarks/benchmark_tokenize.R` provides a
+`benchmark_tokenize()` helper that reports microbenchmark statistics and
+the median tokenization throughput. Run it with:
+
+```R
+source("benchmarks/benchmark_tokenize.R")
+benchmark_tokenize(rep("O elétrico está em ação.", 1000))
+```

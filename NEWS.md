@@ -32,14 +32,15 @@
 * Expanded `pos_map` dataset with additional tag mappings.
 * Expanded Portuguese stopword list and exported as `stopwords_pt`.
 * Added more orthographic variants to `orth_rules`.
-* Expanded vignettes with additional examples on tokenization and social-media
-  cleaning.
-* Added unit test to ensure normalization handles non-UTF8 input.
-* Use `devtools::build_vignettes()` to verify vignette examples.
-* Added tests for error handling when spaCy is unavailable and for the C++ tokenizer with empty input.
-* Ignored CMake build directory `Testing/` to keep the repository clean.
-* Also ignoring the generated `src/symbols.rds` file created during R builds.
-* Documented that CI builds the C++ tokenizer with CMake and runs `ctest`.
-  Noted in the README that `src/symbols.rds` is generated during package installation.
-* CI now runs pre-commit and C++ tests via CTest.
-* Added tokenizer tests with punctuation and empty input cases.
+* Added benchmark script for tokenization performance.
+* `benchmark_tokenize()` now reports tokens-per-second throughput.
+* Added tests for non-UTF8 input.
+* Added GitHub Actions workflow for R CMD check.
+* Exposed C++ tokenizer via `tokenize_cpp()` using Rcpp.
+* Expanded sample datasets (`stopwords_pt`, `slang_map`, `pos_map`) with
+  references to NLTK and social-media corpora.
+* C++ tokenizer now uses a regex-based engine that lowercases tokens.
+* Dataset documentation cites `stopwords-iso`, `slang-dict`, and the UD tagset.
+* README clarifies CI prerequisites and points to `./setup.sh` for installing R.
+* Added regression tests covering punctuation and contractions for the C++ tokenizer.
+

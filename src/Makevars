@@ -1,2 +1,4 @@
 PKG_CPPFLAGS = -I../include
-SOURCES = cpp/tokenizer.cpp
+# Build all C++ sources including Rcpp wrappers
+CXX_STD = CXX17
+SOURCES = $(wildcard cpp/*.cpp) rcpp_tokenizer.cpp

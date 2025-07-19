@@ -76,6 +76,9 @@ mkdir -p build && cd build
 cmake ..
 make
 ctest --output-on-failure
+cd ..
+Rscript -e 'devtools::build_vignettes()'
+Rscript -e 'pkgdown::build_site()'
 ```
 
 Continuous integration tests run automatically when changes are merged to the

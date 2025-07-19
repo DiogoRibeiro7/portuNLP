@@ -12,3 +12,7 @@ test_that("pos_tag_pt falls back when Python missing", {
   tags <- pos_tag_pt(tokens)
   expect_equal(tags, rep("UNK", length(tokens)))
 })
+
+test_that("tokenize_spacy_pt errors when Python missing", {
+  expect_error(tokenize_spacy_pt("texto"), "Python module 'portunlp' not available")
+})

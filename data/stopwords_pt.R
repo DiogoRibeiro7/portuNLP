@@ -1,4 +1,4 @@
-# Source: adapted from the NLTK Portuguese stopword list
+# Source: merged from the NLTK Portuguese list and the stopwords-iso project
 stopwords_pt <- c(
   "a", "o", "e", "de", "do", "da", "dos", "das", "em", "para",
   "por", "com", "sem", "um", "uma", "uns", "umas", "no", "na", "nos",

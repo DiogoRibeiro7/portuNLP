@@ -7,7 +7,7 @@ helper used for spaCy integration. **Python 3.10+ is required.** The toolkit cur
 
 - Text normalization via `normalize_text()`
 - Tokenization with `tokenize_pt()`
-- Optional C++ tokenizer built with CMake (`split_words()`), accessible in R via `tokenize_cpp()`
+- Optional C++ tokenizer built with CMake (`split_words()`), accessible in R via `tokenize_cpp()`. It uses a regex-based approach to strip punctuation and lowercase tokens.
 - Lemmatization and POS tagging using spaCy (`lemmatize_pt()`, `pos_tag_pt()`)
 - Portuguese stopword handling through `get_stopwords()`
 - Loading custom dictionaries using `load_dict()`
@@ -16,8 +16,10 @@ helper used for spaCy integration. **Python 3.10+ is required.** The toolkit cur
   `map_slang()`, and the combined `clean_social()`
 - POS tag mapping with `map_pos_tags()` or `pos_tag_pt(universal = TRUE)`
 - Sample datasets such as `orth_rules`, `slang_map`, `stopwords_pt`, and `pos_map` accessible via `data(orth_rules)`, `data(slang_map)`, or `data(stopwords_pt)`
-  The stopword list is adapted from the NLTK Portuguese collection, while the
-  slang mapping reflects common abbreviations found in Brazilian social media.
+  The stopword list merges entries from the NLTK collection and
+  [stopwords‑iso](https://github.com/stopwords-iso/stopwords-pt). The slang map
+  is derived from the open-source dataset at
+  <https://github.com/fnlp/slang-dict>.
 
 Example using the C++ tokenizer:
 
@@ -77,7 +79,8 @@ ctest --output-on-failure
 ```
 
 Continuous integration tests run automatically when changes are merged to the
-`main` branch.
+`main` branch. The GitHub Actions workflow assumes R is available; locally you
+can install it along with other system dependencies by running `./setup.sh`.
 
 See `ROADMAP.md` for future plans and ongoing development stages.
 

@@ -1,32 +1,32 @@
 #include "tokenizer.hpp"
 
-#include <sstream>
+#include <algorithm>
+#include <regex>
 
 /**
  * \brief Tokenize a string into words.
  *
- * This simple tokenizer also strips basic punctuation prior to splitting on
- * whitespace. It serves as a lightweight alternative to the R implementation
- * and a stepping stone toward a more advanced FreeLing-based tokenizer.
+ * Tokens are extracted using a Unicode-aware regular expression that matches
+ * sequences of letters or digits. Punctuation is discarded and tokens are
+ * lowercased to simplify downstream processing. This function is intentionally
+ * lightweight but demonstrates how C++ can handle basic normalization without
+ * relying on R.
  *
  * \param text Input string to tokenize.
- * \return Vector of tokens.
+ * \return Vector of tokens in lowercase.
  */
 std::vector<std::string> split_words(const std::string& text) {
-  std::string cleaned;
-  cleaned.reserve(text.size());
-  for (char ch : text) {
-    if (std::ispunct(static_cast<unsigned char>(ch))) {
-      cleaned.push_back(' ');
-    } else {
-      cleaned.push_back(ch);
-    }
-  }
-
+  static const std::regex word_re("[A-Za-z\xC0-\xFF0-9]+",
+                                  std::regex::optimize);
   std::vector<std::string> tokens;
-  std::istringstream iss(cleaned);
-  for (std::string token; iss >> token;) {
-    tokens.push_back(token);
+  auto begin = std::sregex_iterator(text.begin(), text.end(), word_re);
+  auto end = std::sregex_iterator();
+  for (auto it = begin; it != end; ++it) {
+    std::string tok = it->str();
+    std::transform(tok.begin(), tok.end(), tok.begin(), [](unsigned char c) {
+      return static_cast<char>(std::tolower(c));
+    });
+    tokens.push_back(tok);
   }
   return tokens;
 }

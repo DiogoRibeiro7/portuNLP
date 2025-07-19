@@ -104,7 +104,7 @@ clean_social <- function(text, emoji = TRUE, accents = TRUE, slang = TRUE,
 #'
 #' @format Named character vector where names are slang terms and
 #'   values are replacements.
-#' @source Manually curated for examples.
+#' @source Derived from <https://github.com/fnlp/slang-dict>.
 #' @examples
 #' data(slang_map)
 "slang_map"

@@ -4,6 +4,11 @@ test_that("tokenize_pt splits sentences", {
   expect_true(length(toks[[1]]) >= 2)
 })
 
+test_that("tokenize_pt removes punctuation", {
+  toks <- tokenize_pt("Olá, mundo!", type = "word")[[1]]
+  expect_equal(toks, c("Olá", "mundo"))
+})
+
 
  test_that("tokenize_pt sentences", {
    toks <- tokenize_pt("Ola. Tudo bem?", type = "sentence")

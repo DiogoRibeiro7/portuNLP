@@ -27,7 +27,7 @@ get_stopwords <- function(extra = NULL, omit = NULL) {
 #' A small sample of common Portuguese stopwords used by `get_stopwords()`.
 #'
 #' @format Character vector of stopwords.
-#' @source Derived from freely available lists.
+#' @source Combined from the NLTK list and <https://github.com/stopwords-iso/stopwords-pt>.
 #' @examples
 #' data(stopwords_pt)
 "stopwords_pt"

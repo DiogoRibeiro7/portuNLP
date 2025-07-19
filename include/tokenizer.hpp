@@ -2,11 +2,12 @@
 #include <string>
 #include <vector>
 
-/// \brief Split text into whitespace-delimited tokens.
+/// \brief Split text into lowercase word tokens.
 ///
-/// Basic punctuation is replaced with spaces prior to splitting. This remains a
-/// lightweight fallback while more advanced tokenizers are being integrated.
+/// Tokens consist of letter or digit sequences extracted via a regular
+/// expression. Punctuation is skipped and results are lowercased to keep the
+/// tokenizer simple while a FreeLing-based solution is developed.
 ///
 /// \param text Input text.
-/// \return Vector of token strings.
+/// \return Vector of lowercase tokens.
 std::vector<std::string> split_words(const std::string& text);

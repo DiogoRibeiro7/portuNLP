@@ -75,7 +75,7 @@ pos_tag_pt <- function(tokens, universal = FALSE) {
 #'   \item{spacy}{spaCy POS tag}
 #'   \item{universal}{Universal POS tag}
 #' }
-#' @source Manually curated for examples.
+#' @source Adapted from the Universal Dependencies project.
 #' @examples
 #' data(pos_map)
 "pos_map"

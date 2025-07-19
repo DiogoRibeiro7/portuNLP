@@ -36,3 +36,5 @@
 * `benchmark_tokenize()` now reports tokens-per-second throughput.
 * Added tests for non-UTF8 input.
 * Added GitHub Actions workflow for R CMD check.
+* Exposed C++ tokenizer via `tokenize_cpp()` using Rcpp.
+* Expanded sample datasets (`stopwords_pt`, `slang_map`, `pos_map`).

@@ -7,7 +7,7 @@ helper used for spaCy integration. **Python 3.10+ is required.** The toolkit cur
 
 - Text normalization via `normalize_text()`
 - Tokenization with `tokenize_pt()`
-- Optional C++ tokenizer built with CMake (`split_words()`)
+- Optional C++ tokenizer built with CMake (`split_words()`), accessible in R via `tokenize_cpp()`
 - Lemmatization and POS tagging using spaCy (`lemmatize_pt()`, `pos_tag_pt()`)
 - Portuguese stopword handling through `get_stopwords()`
 - Loading custom dictionaries using `load_dict()`
@@ -16,6 +16,12 @@ helper used for spaCy integration. **Python 3.10+ is required.** The toolkit cur
   `map_slang()`, and the combined `clean_social()`
 - POS tag mapping with `map_pos_tags()` or `pos_tag_pt(universal = TRUE)`
 - Sample datasets such as `orth_rules`, `slang_map`, `stopwords_pt`, and `pos_map` accessible via `data(orth_rules)`, `data(slang_map)`, or `data(stopwords_pt)`
+
+Example using the C++ tokenizer:
+
+```R
+tokenize_cpp("O gato dorme")
+```
 
 ## Installation
 

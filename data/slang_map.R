@@ -1,1 +1,7 @@
-slang_map <- c(tbm = "também", vc = "você")
+slang_map <- c(
+  tbm = "também",
+  vc = "você",
+  pq = "porque",
+  blz = "beleza",
+  qd = "quando"
+)

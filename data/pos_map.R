@@ -1,3 +1,4 @@
+# Map spaCy part-of-speech tags to the universal tagset
 pos_map <- data.frame(
   spacy = c(
     "NOUN", "VERB", "ADJ", "ADV", "PRON", "ADP", "CCONJ", "SCONJ",

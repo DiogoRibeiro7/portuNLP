@@ -10,9 +10,12 @@
 #' @examples
 #' tokenize_cpp("O gato dorme")
 #' @export
- tokenize_cpp <- function(text) {
+tokenize_cpp <- function(text) {
   if (!is.character(text)) {
     stop("`text` must be a character vector")
   }
-  lapply(text, cpp_split_words)
+  lapply(
+    text,
+    function(x) .Call("_portuNLP_cpp_split_words", x, PACKAGE = "portuNLP")
+  )
 }

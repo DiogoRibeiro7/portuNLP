@@ -16,6 +16,8 @@ helper used for spaCy integration. **Python 3.10+ is required.** The toolkit cur
   `map_slang()`, and the combined `clean_social()`
 - POS tag mapping with `map_pos_tags()` or `pos_tag_pt(universal = TRUE)`
 - Sample datasets such as `orth_rules`, `slang_map`, `stopwords_pt`, and `pos_map` accessible via `data(orth_rules)`, `data(slang_map)`, or `data(stopwords_pt)`
+  The stopword list is adapted from the NLTK Portuguese collection, while the
+  slang mapping reflects common abbreviations found in Brazilian social media.
 
 Example using the C++ tokenizer:
 

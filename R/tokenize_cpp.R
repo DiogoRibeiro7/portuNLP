@@ -1,8 +1,9 @@
 #' Tokenize text using the C++ implementation
 #'
-#' Calls `cpp_split_words()` to tokenize a character vector. This
-#' provides a simple high-performance tokenizer for whitespace-delimited
-#' text and serves as a placeholder for deeper FreeLing integration.
+#' Calls `cpp_split_words()` to tokenize a character vector using a
+#' regular-expression based tokenizer that lowercases tokens. This
+#' provides a simple high-performance approach and serves as a placeholder
+#' for deeper FreeLing integration.
 #'
 #' @param text Character vector with input strings.
 #'

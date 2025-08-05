@@ -8,7 +8,7 @@
 #'
 #' @return Character vector with emoji removed.
 #' @examples
-#' remove_emoji("Olá 😊")
+#' remove_emoji("Olá \U0001F60A")
 #' @export
 remove_emoji <- function(text) {
   if (!is.character(text)) {
@@ -60,7 +60,12 @@ map_slang <- function(text, custom_map = NULL) {
   result <- text
   for (term in names(map)) {
     pattern <- paste0("\\b", term, "\\b")
-    result <- gsub(pattern, map[[term]], result, ignore.case = TRUE)
+    result <- stringi::stri_replace_all_regex(
+      result,
+      pattern,
+      map[[term]],
+      opts_regex = list(case_insensitive = TRUE)
+    )
   }
   result
 }
@@ -78,7 +83,7 @@ map_slang <- function(text, custom_map = NULL) {
 #'
 #' @return Character vector of cleaned text.
 #' @examples
-#' clean_social("Gosto mt disto 😊!", custom_map = c(mt = "muito"))
+#' clean_social("Gosto mt disto \U0001F60A!", custom_map = c(mt = "muito"))
 #' @export
 clean_social <- function(text, emoji = TRUE, accents = TRUE, slang = TRUE,
                          custom_map = NULL) {

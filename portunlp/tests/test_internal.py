@@ -4,6 +4,8 @@ import types
 
 import pytest
 
+spacy = pytest.importorskip("spacy")  # noqa: F401
+
 
 @pytest.fixture()
 def fake_spacy(monkeypatch):

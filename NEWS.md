@@ -43,4 +43,6 @@
 * Dataset documentation cites `stopwords-iso`, `slang-dict`, and the UD tagset.
 * README clarifies CI prerequisites and points to `./setup.sh` for installing R.
 * Added regression tests covering punctuation and contractions for the C++ tokenizer.
+* Documented spaCy model caching and load errors and added edge-case tests for lemmatization and POS tagging.
+* Fixed `map_slang()` to replace only whole-word matches using Perl word boundaries.
 

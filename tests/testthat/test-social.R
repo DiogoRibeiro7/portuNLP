@@ -8,6 +8,8 @@ test_that("normalize_accents folds characters", {
 
 test_that("map_slang replaces words", {
   expect_equal(map_slang("tbm gosto"), "também gosto")
+  expect_equal(map_slang("batbm"), "batbm")
+  expect_equal(map_slang("tbm."), "também.")
 })
 
 test_that("clean_social combines steps", {

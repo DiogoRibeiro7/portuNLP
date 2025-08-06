@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import spacy
 
-_nlp = None
+_nlp: spacy.language.Language | None = None
 
 
 def _load_model() -> spacy.language.Language:
@@ -15,6 +15,9 @@ def _load_model() -> spacy.language.Language:
 
     Returns:
         spacy.language.Language: Loaded spaCy language model.
+
+    Raises:
+        OSError: If the Portuguese model is not installed.
     """
     global _nlp
     if _nlp is None:
@@ -36,6 +39,9 @@ def spacy_tokenize(text: str) -> list[str]:
 
     Returns:
         list[str]: List of token strings.
+
+    Raises:
+        OSError: If the Portuguese model is not installed.
     """
     nlp = _load_model()
     doc = nlp(text)
@@ -50,6 +56,9 @@ def spacy_lemmatize(text: str) -> list[str]:
 
     Returns:
         list[str]: List of lemma strings.
+
+    Raises:
+        OSError: If the Portuguese model is not installed.
     """
     nlp = _load_model()
     doc = nlp(text)
@@ -64,6 +73,9 @@ def spacy_pos_tag(text: str) -> list[str]:
 
     Returns:
         list[str]: List of part-of-speech tags.
+
+    Raises:
+        OSError: If the Portuguese model is not installed.
     """
     nlp = _load_model()
     doc = nlp(text)

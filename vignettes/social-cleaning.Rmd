@@ -17,14 +17,14 @@ normalizing accents, and mapping slang.
 
 ```{r}
 library(portuNLP)
-clean_social("gosto mt disto 😎", custom_map = c(mt = "muito"))
+clean_social("gosto mt disto \U0001F60E", custom_map = c(mt = "muito"))
 ```
 
 Each cleaning step can be used individually. For example, you can remove only
 emoji or just apply the slang map:
 
 ```{r}
-remove_emoji("olá 😊")
+remove_emoji("olá \U0001F60A")
 map_slang("tbm gosto", custom_map = c(tbm = "também"))
 ```
 

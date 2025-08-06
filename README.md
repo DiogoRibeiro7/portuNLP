@@ -52,7 +52,7 @@ tokenize_spacy_pt("Gosto de R e Python.")
 lemmatize_pt(c("gatos", "bonitos"))
 pos_tag_pt(c("gatos", "bonitos"), universal = TRUE)
 get_stopwords()
-clean_social("vc tá 😊", custom_map = c(tá = "está"))
+clean_social("vc tá \U0001F60A", custom_map = c(tá = "está"))
 #> "voce esta "
 apply_orth_rules("acto", orth_rules)
 map_pos_tags(c("NOUN", "VERB"))

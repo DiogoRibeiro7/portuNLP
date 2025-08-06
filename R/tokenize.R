@@ -19,7 +19,10 @@ tokenize_pt <- function(text, type = c("word", "sentence")) {
   type <- match.arg(type)
   boundary <- if (type == "word") "word" else "sentence"
   tokens <- stringi::stri_split_boundaries(text, type = boundary, simplify = FALSE)
-  return(tokens)
+  if (type == "word") {
+    tokens <- lapply(tokens, function(x) x[stringi::stri_detect_regex(x, "\\p{L}|\\d")])
+  }
+  tokens
 }
 
 #' Tokenize Portuguese text with spaCy
@@ -30,7 +33,7 @@ tokenize_pt <- function(text, type = c("word", "sentence")) {
 #' @param text Character vector with input text.
 #'
 #' @return A list where each element is a character vector of tokens.
-#' @examples
+#' @examplesIf reticulate::py_module_available("portunlp")
 #' tokenize_spacy_pt("Olá mundo!")
 #' @export
 tokenize_spacy_pt <- function(text) {

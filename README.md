@@ -1,112 +1,52 @@
 # portuNLP
 
-![R-CMD-check](https://github.com/DiogoRibeiro7/portuNLP/actions/workflows/R-CMD-check.yaml/badge.svg)
-
-`portuNLP` is an R package for Portuguese text processing with a small Python
-helper used for spaCy integration. **Python 3.10+ is required.** The toolkit currently includes:
-
-- Text normalization via `normalize_text()`
-- Tokenization with `tokenize_pt()`
-- Optional C++ tokenizer built with CMake (`split_words()`), accessible in R via `tokenize_cpp()`. It uses a regex-based approach to strip punctuation and lowercase tokens.
-- Lemmatization and POS tagging using spaCy (`lemmatize_pt()`, `pos_tag_pt()`)
-- Portuguese stopword handling through `get_stopwords()`
-- Loading custom dictionaries using `load_dict()`
-- Spell correction with `apply_orth_rules()` using the `orth_rules` dataset
-- Social-media cleaning helpers: `remove_emoji()`, `normalize_accents()`,
-  `map_slang()`, and the combined `clean_social()`
-- POS tag mapping with `map_pos_tags()` or `pos_tag_pt(universal = TRUE)`
-- Sample datasets such as `orth_rules`, `slang_map`, `stopwords_pt`, and `pos_map` accessible via `data(orth_rules)`, `data(slang_map)`, or `data(stopwords_pt)`
-  The stopword list merges entries from the NLTK collection and
-  [stopwords‑iso](https://github.com/stopwords-iso/stopwords-pt). The slang map
-  is derived from the open-source dataset at
-  <https://github.com/fnlp/slang-dict>.
-
-Example using the C++ tokenizer:
-
-```R
-tokenize_cpp("O gato dorme")
-```
+`portuNLP` is a Python package for Portuguese NLP tasks built on spaCy.
+The current implementation exposes helpers for tokenization, lemmatization,
+and part-of-speech tagging. Python 3.10 to 3.12 is required.
 
 ## Installation
 
-Ensure [Poetry](https://python-poetry.org/) is available and Python 3.10 or newer is installed, then run:
+Install dependencies with Poetry:
 
 ```bash
-./setup.sh
+poetry install
 ```
 
-The script installs R (and development headers) plus a minimal TeX
-distribution if they are missing. It also installs the R packages
-`stringi`, `reticulate`, and `testthat` via the system package manager and
-installs Python dependencies with Poetry.
+Install the Portuguese spaCy model separately:
+
+```bash
+poetry run python -m spacy download pt_core_news_sm
+```
 
 ## Usage
 
-```R
-library(portuNLP)
+```python
+from portunlp import spacy_lemmatize, spacy_pos_tag, spacy_tokenize
 
-normalize_text("Olá, Mundo!")
-normalize_text("acção", correct = TRUE)
-tokenize_pt("Gosto de R e Python.")
-tokenize_spacy_pt("Gosto de R e Python.")
-lemmatize_pt(c("gatos", "bonitos"))
-pos_tag_pt(c("gatos", "bonitos"), universal = TRUE)
-get_stopwords()
-clean_social("vc tá \U0001F60A", custom_map = c(tá = "está"))
-#> "voce esta "
-apply_orth_rules("acto", orth_rules)
-map_pos_tags(c("NOUN", "VERB"))
+text = "Os gatos bonitos comem peixe."
+
+tokens = spacy_tokenize(text)
+lemmas = spacy_lemmatize(text)
+tags = spacy_pos_tag(text)
 ```
-
-The accompanying Python module exposes helpers for tokenization,
-lemmatization, and part-of-speech tagging using spaCy.  When the
-`pt_core_news_sm` model is installed, `tokenize_spacy_pt()`,
-`lemmatize_pt()`, and `pos_tag_pt()` transparently call these helpers via
-`reticulate`.
 
 ## Development
 
-After modifying the code, run the following checks:
+Run the Python checks with:
 
 ```bash
-R CMD check .
-poetry run pytest
+poetry run python -m pytest portunlp/tests -q
+poetry run python -m mypy portunlp
 pre-commit run --all-files
+```
+
+If you are working on the standalone C++ tokenizer, build and test it with:
+
+```bash
 mkdir -p build && cd build
 cmake ..
 make
 ctest --output-on-failure
-cd ..
-Rscript -e 'devtools::build_vignettes()'
-Rscript -e 'pkgdown::build_site()'
 ```
 
-Continuous integration tests run automatically when changes are merged to the
-`main` branch. The GitHub Actions workflow assumes R is available; locally you
-can install it along with other system dependencies by running `./setup.sh`.
-
-See `ROADMAP.md` for future plans and ongoing development stages.
-
-Additional examples are available in the `vignettes/` directory. After
-installing the package you can browse them with:
-
-```R
-browseVignettes("portuNLP")
-```
-
-If `pkgdown` is installed, you can build the documentation website with:
-
-```R
-pkgdown::build_site()
-```
-
-## Benchmarks
-
-The script `benchmarks/benchmark_tokenize.R` provides a
-`benchmark_tokenize()` helper that reports microbenchmark statistics and
-the median tokenization throughput. Run it with:
-
-```R
-source("benchmarks/benchmark_tokenize.R")
-benchmark_tokenize(rep("O elétrico está em ação.", 1000))
-```
+See `ROADMAP.md` for historical planning context.

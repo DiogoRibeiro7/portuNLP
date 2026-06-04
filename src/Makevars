@@ -1,3 +1,0 @@
-PKG_CPPFLAGS = -I../include
-CXX_STD = CXX17
-OBJECTS = RcppExports.o cpp/tokenizer.o rcpp_tokenizer.o

@@ -2,6 +2,11 @@
 
 ## 0.0.0.9000
 
+* Removed the legacy R package implementation and its generated assets.
+* Kept the Python spaCy helpers as the primary supported interface.
+* Simplified setup and documentation around the Python workflow.
+* Historical R-focused release notes from the initial package stage follow.
+*
 * Initial package skeleton created.
 * Added `setup.sh` script for installing dependencies and updated
   documentation.

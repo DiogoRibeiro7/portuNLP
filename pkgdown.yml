@@ -1,6 +1,0 @@
-template:
-  params:
-    bootswatch: flatly
-url: https://github.com/DiogoRibeiro7/portuNLP
-development:
-  mode: auto

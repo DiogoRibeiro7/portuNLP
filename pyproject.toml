@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "portunlp"
 version = "0.0.0"
-description = "Python helpers for portuNLP R package"
+description = "Portuguese NLP helpers built on spaCy"
 authors = ["Diogo Ribeiro <diogo.debastos.ribeiro@gmail.com>"]
 license = "MIT"
 

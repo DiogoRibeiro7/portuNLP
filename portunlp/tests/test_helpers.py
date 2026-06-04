@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 
 spacy: Any = pytest.importorskip("spacy")
+pytest.importorskip("pt_core_news_sm")
 
 from portunlp import spacy_lemmatize, spacy_pos_tag, spacy_tokenize  # noqa: E402
 

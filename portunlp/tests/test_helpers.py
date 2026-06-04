@@ -5,7 +5,7 @@ import pytest
 spacy: Any = pytest.importorskip("spacy")
 pytest.importorskip("pt_core_news_sm")
 
-from portunlp import spacy_lemmatize, spacy_pos_tag, spacy_tokenize  # noqa: E402
+from portunlp import spacy_analyze, spacy_lemmatize, spacy_pos_tag, spacy_sentencize, spacy_tokenize  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -35,6 +35,22 @@ def test_spacy_pos_tag(sample_text: str) -> None:
     assert len(tags) == len(sample_text.split())
 
 
+def test_spacy_sentencize(sample_text: str) -> None:
+    """spaCy sentence segmentation emits at least one sentence."""
+    sentences = spacy_sentencize(sample_text)
+    assert isinstance(sentences, list)
+    assert len(sentences) >= 1
+
+
+def test_spacy_analyze(sample_text: str) -> None:
+    """spaCy structured analysis returns token metadata."""
+    tokens = spacy_analyze(sample_text)
+    assert isinstance(tokens, list)
+    assert len(tokens) >= 1
+    assert tokens[0].text
+    assert isinstance(tokens[0].is_alpha, bool)
+
+
 def test_tokenize_empty() -> None:
     """Tokenizing empty input returns an empty list."""
     assert spacy_tokenize("") == []
@@ -48,3 +64,13 @@ def test_lemmatize_empty() -> None:
 def test_pos_tag_empty() -> None:
     """POS tagging empty input returns an empty list."""
     assert spacy_pos_tag("") == []
+
+
+def test_sentencize_empty() -> None:
+    """Sentence segmentation of empty input returns an empty list."""
+    assert spacy_sentencize("") == []
+
+
+def test_analyze_empty() -> None:
+    """Structured analysis of empty input returns an empty list."""
+    assert spacy_analyze("") == []

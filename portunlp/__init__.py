@@ -1,7 +1,7 @@
 """Portuguese NLP helpers for Python."""
 
 from ._data import ORTHOGRAPHIC_RULES, PORTUGUESE_STOPWORDS, POS_TAG_MAP, SLANG_MAP
-from ._spacy import spacy_lemmatize, spacy_pos_tag, spacy_tokenize
+from ._spacy import SpacyToken, spacy_analyze, spacy_lemmatize, spacy_pos_tag, spacy_sentencize, spacy_tokenize
 from .text import (
     apply_orth_rules,
     apply_orthographic_rules,
@@ -27,6 +27,7 @@ __all__ = [
     "PORTUGUESE_STOPWORDS",
     "POS_TAG_MAP",
     "SLANG_MAP",
+    "SpacyToken",
     "apply_orth_rules",
     "apply_orthographic_rules",
     "clean_social",
@@ -41,8 +42,10 @@ __all__ = [
     "normalize_text",
     "pos_tag_pt",
     "remove_emoji",
+    "spacy_analyze",
     "spacy_lemmatize",
     "spacy_pos_tag",
+    "spacy_sentencize",
     "spacy_tokenize",
     "tokenize_pt",
     "tokenize_spacy_pt",

@@ -1,139 +1,46 @@
-# Portuguese-Centric Text Processing for R: Roadmap
+# portuNLP Roadmap
 
-## Package Name & Description
+## Current Direction
 
-**Name:** portuNLP
+`portuNLP` is now a Python-first library for Portuguese NLP workflows.
+The current scope is:
 
-**Description:** A comprehensive R toolkit for Portuguese text processing. It wraps high-performance C++/Python libraries (FreeLing, spaCy), offering normalization, tokenization, lemmatization, POS tagging, plus social-media cleaning (emoji removal, accent normalization, slang mapping), and built-in Portuguese resources.
+- Native text helpers for normalization, tokenization, slang cleaning,
+  stopwords, and dictionary loading.
+- spaCy-backed lemmatization, POS tagging, and tokenization for Portuguese.
+- A small standalone C++ tokenizer kept as an optional low-level component.
 
-## Overview
+## Near Term
 
-This document details the development plan to build and publish **portuNLP** on CRAN. The package will provide end-to-end support for processing Portuguese text in R.
+1. Stabilize the Python API.
+   - Keep public function names coherent and typed.
+   - Tighten packaging so only library artifacts ship in built distributions.
+   - Expand tests for edge cases and compatibility behavior.
 
-## Prerequisites
+2. Improve language resources.
+   - Expand orthographic rules.
+   - Curate broader stopword and slang datasets.
+   - Add clearer provenance for bundled lexical resources.
 
-* Proficiency in R package development and CRAN policies.
-* Experience with Rcpp and/or **reticulate** for C++/Python integration.
-* Familiarity with Portuguese linguistics: morphology, orthography, slang.
-* Understanding of external NLP libraries (FreeLing, spaCy).
+3. Strengthen tokenization.
+   - Compare the native tokenizer against spaCy behavior.
+   - Decide whether the C++ tokenizer should remain standalone or gain a Python binding.
+   - Add more coverage for punctuation, contractions, and mixed Unicode text.
 
-## Phase 1: Project Kickoff & Research (Weeks 1–2)
+## Medium Term
 
-1. **Repository Initialization**
+1. Add richer NLP helpers.
+   - Sentence segmentation helpers.
+   - Optional morphology-oriented utilities built on spaCy outputs.
+   - Higher-level preprocessing pipelines for Portuguese corpora.
 
-   * Create Git repo, define branching model.
-   * Use `usethis::create_package()` to scaffold.
-   * Add `.gitignore`, LICENSE (MIT), README stub, CODE\_OF\_CONDUCT.
-   * Set up CI via GitHub Actions (R-CMD-check on multiple platforms).
+2. Improve developer experience.
+   - Add release automation for Python distributions.
+   - Add CI focused on Python tests, typing, and wheel builds.
+   - Publish a cleaner API reference and usage examples.
 
-2. **Dependency Survey**
+## Open Decisions
 
-   * Evaluate wrappers: **Rcpp**, **reticulate**, **httr**, **stringi**, **data.table**.
-   * Assess FreeLing and spaCy capabilities for Portuguese.
-   * Draft DESCRIPTION with `Imports:` and `Suggests:`.
-
-3. **API & Resource Planning**
-
-   * Define core functions: `normalize_pt()`, `tokenize_pt()`, `lemmatize_pt()`, `pos_tag_pt()`.
-   * Specify interfaces for social-media cleaners: `remove_emoji()`, `normalize_accents()`, `map_slang()`.
-   * List built-in assets: stopwords, dictionaries, orthographic rules.
-
-## Phase 2: Core NLP Wrappers (Weeks 3–6)
-
-1. **Library Integration**
-
-   * **FreeLing**: Wrap C++ commands via Rcpp.
-   * **spaCy**: Use **reticulate** to call Python models if FreeLing missing.
-   * Minimal C++ tokenizer built with CMake and tested via `ctest`.
-
-2. **Normalization Module**
-
-   * `normalize_text(text, lower = TRUE, remove_punct = FALSE)`.
-   * Implement accent folding (`stringi::stri_trans_general`).
-   * Spell correction hooks using orthographic rules.
-
-3. **Tokenization & Lemmatization**
-
-   * `tokenize_pt(text, type = c("word", "sentence"))`.
-   * `lemmatize_pt(tokens)`: return lemma vector.
-
-4. **POS Tagging**
-
-   * `pos_tag_pt(tokens, universal = FALSE)`: return tags using FreeLing or spaCy, optionally mapping to the Universal tagset.
-   * Standardize tagset and provide mapping table. Implemented `map_pos_tags()` and added a `universal` argument to `pos_tag_pt()` for direct conversion.
-
-## Phase 3: Portuguese Resources (Weeks 7–8)
-
-1. **Stopword Lists**
-
-   * Curate default stopwords from multiple sources.
-   * Allow custom additions/removals.
-
-2. **Dictionaries & Rules**
-
-   * Include orthographic rule set for European and Brazilian variants. **Implemented** via `orth_rules` and `apply_orth_rules()`.
-   * Custom dictionary loader: `load_dict(path)`.
-
-## Phase 4: Social Media Cleaning (Weeks 9–10)
-
-1. **Emoji Removal**
-
-   * `remove_emoji(text)` leveraging Unicode ranges.
-
-2. **Accent Normalization**
-
-   * `normalize_accents(text)` to strip or standardize.
-
-3. **Slang & Abbreviation Mapping**
-
-   * Provide built-in slang map.
-   * `map_slang(text, custom_map = NULL)`.
-
-4. **Pipeline Function**
-
-   * `clean_social(text, emoji = TRUE, accents = TRUE, slang = TRUE)`.
-
-## Phase 5: Documentation & Examples (Weeks 11–12)
-
-1. **Roxygen2 Comments**
-
-   * Fully document all functions with `@param`, `@return`, `@examples`.
-
-2. **Vignettes**
-
-   * Quickstart tutorial for text normalization.
-   * End-to-end example: social-media corpus cleaning.
-
-3. **Pkgdown Site**
-
-   * Configure **pkgdown**; add badges.
-
-## Phase 6: Testing & Quality Assurance (Weeks 13–14)
-
-1. **Unit Tests (`testthat`)**
-
-   * Edge cases: empty strings, non-UTF8 input.
-   * Consistency checks between FreeLing and spaCy.
-
-2. **Integration Tests**
-
-   * Real Portuguese sentences: EU Portuguese vs. BR Portuguese.
-
-3. **Performance Benchmarks**
-
-   * Measure throughput for large corpora.
-
-4. **CRAN Checks**
-
-   * Resolve NOTES, WARNINGS, ERRORS on Windows, macOS, Linux.
-
-## Phase 7: Release & Maintenance (Week 15+)
-
-1. Prepare NEWS.md and version bump.
-2. Build source package and submit to CRAN.
-3. Monitor CRAN incoming, fix issues.
-4. Plan future enhancements: slang learning, Shiny dashboard, additional languages.
-
----
-
-*Roadmap generated on July 8, 2025.*
+- Whether to expose the C++ tokenizer directly in Python.
+- Whether to keep compatibility aliases such as `tokenize_pt()` long term.
+- Whether bundled resources should remain in code or move to dedicated data files.

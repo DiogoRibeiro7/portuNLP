@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from importlib import import_module
 from typing import TYPE_CHECKING, Any, cast
 
@@ -13,6 +14,25 @@ else:
 SPACY_MODEL_NAME = "pt_core_news_sm"
 
 _nlp: Language | None = None
+
+
+@dataclass(frozen=True)
+class SpacyToken:
+    """Structured token information extracted from spaCy.
+
+    Attributes:
+        text (str): Original token text.
+        lemma (str): Lemmatized token form.
+        pos (str): spaCy POS tag.
+        is_alpha (bool): Whether the token contains only alphabetic characters.
+        is_stop (bool): Whether spaCy marks the token as a stopword.
+    """
+
+    text: str
+    lemma: str
+    pos: str
+    is_alpha: bool
+    is_stop: bool
 
 
 def _load_model() -> Language:
@@ -41,6 +61,24 @@ def _load_model() -> Language:
     return _nlp
 
 
+def _get_doc(text: str) -> Any:
+    """Process text with spaCy and return the document object.
+
+    Args:
+        text (str): Text to process.
+
+    Returns:
+        Any: The processed spaCy document.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    if not text:
+        return None
+
+    return _load_model()(text)
+
+
 def _process_text(text: str, attribute: str) -> list[str]:
     """Process text with spaCy and return a token attribute.
 
@@ -54,10 +92,10 @@ def _process_text(text: str, attribute: str) -> list[str]:
     Raises:
         OSError: If spaCy or the Portuguese model is not installed.
     """
-    if not text:
+    doc = _get_doc(text)
+    if doc is None:
         return []
 
-    doc = _load_model()(text)
     return [getattr(token, attribute) for token in doc]
 
 
@@ -104,3 +142,50 @@ def spacy_pos_tag(text: str) -> list[str]:
         OSError: If spaCy or the Portuguese model is not installed.
     """
     return _process_text(text, "pos_")
+
+
+def spacy_sentencize(text: str) -> list[str]:
+    """Segment text into sentences using spaCy.
+
+    Args:
+        text (str): Text to segment.
+
+    Returns:
+        list[str]: Sentence strings emitted by spaCy.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    doc = _get_doc(text)
+    if doc is None:
+        return []
+
+    return [sentence.text for sentence in doc.sents]
+
+
+def spacy_analyze(text: str) -> list[SpacyToken]:
+    """Return structured token information extracted by spaCy.
+
+    Args:
+        text (str): Text to analyze.
+
+    Returns:
+        list[SpacyToken]: Structured token metadata.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    doc = _get_doc(text)
+    if doc is None:
+        return []
+
+    return [
+        SpacyToken(
+            text=token.text,
+            lemma=token.lemma_,
+            pos=token.pos_,
+            is_alpha=token.is_alpha,
+            is_stop=token.is_stop,
+        )
+        for token in doc
+    ]

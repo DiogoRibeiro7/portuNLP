@@ -1,5 +1,50 @@
-"""Python helpers for portuNLP."""
+"""Portuguese NLP helpers for Python."""
 
+from ._data import ORTHOGRAPHIC_RULES, PORTUGUESE_STOPWORDS, POS_TAG_MAP, SLANG_MAP
 from ._spacy import spacy_lemmatize, spacy_pos_tag, spacy_tokenize
+from .text import (
+    apply_orth_rules,
+    apply_orthographic_rules,
+    clean_social,
+    clean_social_text,
+    get_stopwords,
+    lemmatize_pt,
+    load_dict,
+    load_dictionary,
+    map_pos_tags,
+    map_slang,
+    normalize_accents,
+    normalize_text,
+    pos_tag_pt,
+    remove_emoji,
+    tokenize_pt,
+    tokenize_spacy_pt,
+    tokenize_text,
+)
 
-__all__ = ["spacy_tokenize", "spacy_lemmatize", "spacy_pos_tag"]
+__all__ = [
+    "ORTHOGRAPHIC_RULES",
+    "PORTUGUESE_STOPWORDS",
+    "POS_TAG_MAP",
+    "SLANG_MAP",
+    "apply_orth_rules",
+    "apply_orthographic_rules",
+    "clean_social",
+    "clean_social_text",
+    "get_stopwords",
+    "lemmatize_pt",
+    "load_dict",
+    "load_dictionary",
+    "map_pos_tags",
+    "map_slang",
+    "normalize_accents",
+    "normalize_text",
+    "pos_tag_pt",
+    "remove_emoji",
+    "spacy_lemmatize",
+    "spacy_pos_tag",
+    "spacy_tokenize",
+    "tokenize_pt",
+    "tokenize_spacy_pt",
+    "tokenize_text",
+]

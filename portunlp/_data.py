@@ -1,0 +1,80 @@
+"""Bundled lexical resources for Portuguese NLP helpers."""
+
+from __future__ import annotations
+
+ORTHOGRAPHIC_RULES: tuple[tuple[str, str], ...] = (
+    ("acto", "ato"),
+    ("electrico", "elétrico"),
+    ("facto", "fato"),
+    ("bónus", "bônus"),
+    ("acção", "ação"),
+)
+
+SLANG_MAP: dict[str, str] = {
+    "tbm": "também",
+    "vc": "você",
+    "pq": "porque",
+    "blz": "beleza",
+    "qd": "quando",
+}
+
+PORTUGUESE_STOPWORDS: tuple[str, ...] = (
+    "a",
+    "o",
+    "e",
+    "de",
+    "do",
+    "da",
+    "dos",
+    "das",
+    "em",
+    "para",
+    "por",
+    "com",
+    "sem",
+    "um",
+    "uma",
+    "uns",
+    "umas",
+    "no",
+    "na",
+    "nos",
+    "nas",
+    "ao",
+    "aos",
+    "à",
+    "às",
+    "se",
+    "que",
+    "não",
+    "mais",
+    "mas",
+    "como",
+    "hoje",
+    "ontem",
+    "vou",
+    "vais",
+    "estou",
+    "esta",
+    "estamos",
+    "estao",
+    "fui",
+    "era",
+)
+
+POS_TAG_MAP: dict[str, str] = {
+    "NOUN": "NOUN",
+    "VERB": "VERB",
+    "ADJ": "ADJ",
+    "ADV": "ADV",
+    "PRON": "PRON",
+    "ADP": "ADP",
+    "CCONJ": "CCONJ",
+    "SCONJ": "SCONJ",
+    "PROPN": "PROPN",
+    "DET": "DET",
+    "NUM": "NUM",
+    "PUNCT": "PUNCT",
+    "INTJ": "INTJ",
+    "SYM": "SYM",
+}

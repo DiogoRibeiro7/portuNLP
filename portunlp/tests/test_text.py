@@ -4,14 +4,17 @@ import pytest
 
 from portunlp import (
     PORTUGUESE_STOPWORDS,
+    ProcessedText,
     apply_orth_rules,
     clean_social,
+    filter_stopwords,
     get_stopwords,
     load_dict,
     map_pos_tags,
     map_slang,
     normalize_accents,
     normalize_text,
+    preprocess_text,
     remove_emoji,
     tokenize_pt,
     tokenize_text,
@@ -53,6 +56,12 @@ def test_get_stopwords_supports_additions_and_omissions() -> None:
     assert PORTUGUESE_STOPWORDS[0] == "a"
 
 
+def test_filter_stopwords_removes_configured_words() -> None:
+    """Stopword filtering removes built-in and custom stopwords."""
+    assert filter_stopwords(["a", "casa", "e", "bonita"]) == ["casa", "bonita"]
+    assert filter_stopwords(["ação", "bonita"], stopwords={"acao"}, normalize=True) == ["bonita"]
+
+
 def test_load_dict_reads_non_empty_lines(tmp_path: Path) -> None:
     """Dictionary loading trims whitespace and skips blanks."""
     dictionary_path = tmp_path / "sample_dict.txt"
@@ -70,6 +79,24 @@ def test_load_dict_errors_for_missing_file(tmp_path: Path) -> None:
 def test_map_pos_tags_preserves_unknown_values() -> None:
     """Known tags are mapped and unknown tags pass through unchanged."""
     assert map_pos_tags(["NOUN", "UNKNOWN"]) == ["NOUN", "UNKNOWN"]
+
+
+def test_preprocess_text_builds_structured_result() -> None:
+    """The preprocessing pipeline returns normalized, tokenized outputs."""
+    result = preprocess_text("Acção e vc! 😊", correct=True, social=True, remove_stopwords=True)
+    assert isinstance(result, ProcessedText)
+    assert result.original_text == "Acção e vc! 😊"
+    assert result.normalized_text == "acao e voce "
+    assert result.sentences == ["Acção e você!"]
+    assert result.tokens == ["acao", "e", "voce"]
+    assert result.filtered_tokens == ["acao", "voce"]
+
+
+def test_preprocess_text_uses_native_sentence_segmentation_by_default() -> None:
+    """The preprocessing pipeline preserves simple sentence boundaries."""
+    result = preprocess_text("Olá. Tudo bem?", remove_punct=False)
+    assert result.sentences == ["Olá.", "Tudo bem?"]
+    assert result.tokens == ["ola", "tudo", "bem"]
 
 
 def test_normalize_accents_and_apply_orth_rules() -> None:

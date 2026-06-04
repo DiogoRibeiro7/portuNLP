@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import re
 import unicodedata
 from pathlib import Path
@@ -26,6 +27,25 @@ _EMOJI_PATTERN = re.compile(
     flags=re.UNICODE,
 )
 _WORD_BOUNDARY_TEMPLATE = r"(?<!\w){term}(?!\w)"
+
+
+@dataclass(frozen=True)
+class ProcessedText:
+    """Structured result of the text preprocessing pipeline.
+
+    Attributes:
+        original_text (str): Original input text.
+        normalized_text (str): Final normalized text used for tokenization.
+        sentences (list[str]): Sentence segmentation result.
+        tokens (list[str]): Tokenization result.
+        filtered_tokens (list[str]): Tokens after optional stopword removal.
+    """
+
+    original_text: str
+    normalized_text: str
+    sentences: list[str]
+    tokens: list[str]
+    filtered_tokens: list[str]
 
 
 def _ensure_text(value: str, *, name: str = "text") -> str:
@@ -363,6 +383,37 @@ def get_stopwords(
     return ordered_words
 
 
+def filter_stopwords(
+    tokens: list[str] | tuple[str, ...],
+    *,
+    stopwords: list[str] | tuple[str, ...] | set[str] | None = None,
+    normalize: bool = False,
+) -> list[str]:
+    """Remove stopwords from a token sequence.
+
+    Args:
+        tokens (list[str] | tuple[str, ...]): Tokens to filter.
+        stopwords (list[str] | tuple[str, ...] | set[str] | None): Optional stopword set.
+        normalize (bool): Whether to accent-fold and lowercase before comparison.
+
+    Returns:
+        list[str]: Tokens that are not stopwords.
+    """
+    normalized_tokens = _normalize_iterable(tokens, name="tokens")
+    configured_stopwords = get_stopwords() if stopwords is None else _normalize_iterable(stopwords, name="stopwords")
+    stopword_set = set(configured_stopwords)
+
+    if not normalize:
+        return [token for token in normalized_tokens if token not in stopword_set]
+
+    normalized_stopwords = {normalize_text(word, lower=True, remove_punct=False, correct=False) for word in stopword_set}
+    return [
+        token
+        for token in normalized_tokens
+        if normalize_text(token, lower=True, remove_punct=False, correct=False) not in normalized_stopwords
+    ]
+
+
 def map_pos_tags(tags: list[str] | tuple[str, ...]) -> list[str]:
     """Map spaCy POS tags to the package's universal tagset.
 
@@ -374,6 +425,68 @@ def map_pos_tags(tags: list[str] | tuple[str, ...]) -> list[str]:
     """
     normalized_tags = _normalize_iterable(tags, name="tags")
     return [POS_TAG_MAP.get(tag, tag) for tag in normalized_tags]
+
+
+def preprocess_text(
+    text: str,
+    *,
+    correct: bool = False,
+    remove_punct: bool = True,
+    social: bool = False,
+    custom_map: Mapping[str, str] | None = None,
+    remove_stopwords: bool = False,
+    use_spacy: bool = False,
+) -> ProcessedText:
+    """Run a high-level Portuguese preprocessing pipeline.
+
+    Args:
+        text (str): Input text.
+        correct (bool): Whether to apply orthographic corrections.
+        remove_punct (bool): Whether to remove punctuation during normalization.
+        social (bool): Whether to apply social-text cleaning before normalization.
+        custom_map (Mapping[str, str] | None): Optional slang overrides.
+        remove_stopwords (bool): Whether to remove stopwords from the token list.
+        use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+
+    Returns:
+        ProcessedText: Structured preprocessing output.
+    """
+    original_text = _ensure_text(text)
+    working_text = original_text
+
+    if social:
+        working_text = clean_social_text(
+            working_text,
+            emoji=True,
+            accents=False,
+            slang=True,
+            custom_map=custom_map,
+        )
+
+    normalized_text = normalize_text(
+        working_text,
+        lower=True,
+        remove_punct=remove_punct,
+        correct=correct,
+    )
+
+    if use_spacy:
+        from ._spacy import spacy_sentencize, spacy_tokenize
+
+        sentences = spacy_sentencize(working_text)
+        tokens = spacy_tokenize(normalized_text)
+    else:
+        sentences = tokenize_text(working_text, kind="sentence")
+        tokens = tokenize_text(normalized_text, kind="word")
+
+    filtered_tokens = filter_stopwords(tokens, normalize=False) if remove_stopwords else list(tokens)
+    return ProcessedText(
+        original_text=original_text,
+        normalized_text=normalized_text,
+        sentences=sentences,
+        tokens=tokens,
+        filtered_tokens=filtered_tokens,
+    )
 
 
 def lemmatize_pt(text: str) -> list[str]:

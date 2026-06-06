@@ -203,6 +203,29 @@ def test_spacy_document_returns_full_summary(fake_spacy):
     assert summary.sentences.sentence_count == 2
 
 
+def test_spacy_corpus_returns_aggregate_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_corpus(["Ana Casa", "Porto"])
+
+    assert summary.document_count == 2
+    assert summary.token_count == 3
+    assert [document.text for document in summary.documents] == ["Ana Casa", "Porto"]
+    assert summary.pos_counts == {"NOUN": 3}
+    assert summary.entity_label_counts == {"PER": 3}
+    assert summary.dependency_counts == {"ROOT": 2, "obj": 1}
+    assert summary.noun_chunk_root_counts == {"Ana": 1, "Casa": 1, "Porto": 1}
+
+
+def test_spacy_corpus_validates_input(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+
+    with pytest.raises(TypeError, match="`texts` must be a list or tuple of strings"):
+        spacy_helpers.spacy_corpus("Ana Casa")  # type: ignore[arg-type]
+
+    with pytest.raises(TypeError, match="`texts` must contain only strings"):
+        spacy_helpers.spacy_corpus(["Ana Casa", 1])  # type: ignore[list-item]
+
+
 def test_error_when_model_missing(monkeypatch):
     spacy_helpers = importlib.reload(importlib.import_module("portunlp._spacy"))
 

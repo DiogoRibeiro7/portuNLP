@@ -228,6 +228,29 @@ class SpacyDocument:
     sentences: SpacySentences
 
 
+@dataclass(frozen=True)
+class SpacyCorpus:
+    """Structured corpus summary extracted by spaCy.
+
+    Attributes:
+        documents (list[SpacyDocument]): Per-document structured analyses.
+        document_count (int): Number of analyzed documents.
+        token_count (int): Total number of tokens across documents.
+        pos_counts (dict[str, int]): Aggregate POS counts across the corpus.
+        entity_label_counts (dict[str, int]): Aggregate entity-label counts.
+        dependency_counts (dict[str, int]): Aggregate dependency-label counts.
+        noun_chunk_root_counts (dict[str, int]): Aggregate noun-chunk root counts.
+    """
+
+    documents: list[SpacyDocument]
+    document_count: int
+    token_count: int
+    pos_counts: dict[str, int]
+    entity_label_counts: dict[str, int]
+    dependency_counts: dict[str, int]
+    noun_chunk_root_counts: dict[str, int]
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -270,6 +293,26 @@ def _get_doc(text: str) -> Any:
         return None
 
     return _load_model()(text)
+
+
+def _ensure_texts(texts: list[str] | tuple[str, ...], *, name: str = "texts") -> list[str]:
+    """Validate a sequence of text inputs.
+
+    Args:
+        texts (list[str] | tuple[str, ...]): Candidate text sequence.
+        name (str): Parameter name for error messages.
+
+    Returns:
+        list[str]: Validated text values.
+
+    Raises:
+        TypeError: If the sequence is invalid or contains non-string values.
+    """
+    if not isinstance(texts, (list, tuple)):
+        raise TypeError(f"`{name}` must be a list or tuple of strings")
+    if not all(isinstance(text, str) for text in texts):
+        raise TypeError(f"`{name}` must contain only strings")
+    return list(texts)
 
 
 def _process_text(text: str, attribute: str) -> list[str]:
@@ -601,4 +644,46 @@ def spacy_document(text: str) -> SpacyDocument:
         dependencies=spacy_dependencies(analyzed_text),
         noun_chunks=spacy_noun_chunks(analyzed_text),
         sentences=spacy_sentences(analyzed_text),
+    )
+
+
+def spacy_corpus(texts: list[str] | tuple[str, ...]) -> SpacyCorpus:
+    """Return a structured corpus summary extracted by spaCy.
+
+    Args:
+        texts (list[str] | tuple[str, ...]): Texts to analyze.
+
+    Returns:
+        SpacyCorpus: Structured corpus analysis.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+        TypeError: If the input is not a sequence of strings.
+    """
+    normalized_texts = _ensure_texts(texts)
+    documents = [spacy_document(text) for text in normalized_texts]
+
+    pos_counts: dict[str, int] = {}
+    entity_label_counts: dict[str, int] = {}
+    dependency_counts: dict[str, int] = {}
+    noun_chunk_root_counts: dict[str, int] = {}
+
+    for document in documents:
+        for label, count in document.morphology.pos_counts.items():
+            pos_counts[label] = pos_counts.get(label, 0) + count
+        for label, count in document.entities.label_counts.items():
+            entity_label_counts[label] = entity_label_counts.get(label, 0) + count
+        for label, count in document.dependencies.dep_counts.items():
+            dependency_counts[label] = dependency_counts.get(label, 0) + count
+        for root, count in document.noun_chunks.root_counts.items():
+            noun_chunk_root_counts[root] = noun_chunk_root_counts.get(root, 0) + count
+
+    return SpacyCorpus(
+        documents=documents,
+        document_count=len(documents),
+        token_count=sum(len(document.tokens) for document in documents),
+        pos_counts=pos_counts,
+        entity_label_counts=entity_label_counts,
+        dependency_counts=dependency_counts,
+        noun_chunk_root_counts=noun_chunk_root_counts,
     )

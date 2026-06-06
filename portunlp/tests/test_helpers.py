@@ -7,6 +7,7 @@ pytest.importorskip("pt_core_news_sm")
 
 from portunlp import (  # noqa: E402
     spacy_analyze,
+    spacy_corpus,
     spacy_document,
     spacy_dependencies,
     spacy_entities,
@@ -112,6 +113,18 @@ def test_spacy_document(sample_text: str) -> None:
     assert summary.sentences.sentence_count >= 1
 
 
+def test_spacy_corpus(sample_text: str) -> None:
+    """spaCy corpus summary returns per-document and aggregate metadata."""
+    summary = spacy_corpus([sample_text, sample_text])
+    assert len(summary.documents) == 2
+    assert summary.document_count == 2
+    assert summary.token_count >= 2
+    assert isinstance(summary.pos_counts, dict)
+    assert isinstance(summary.entity_label_counts, dict)
+    assert isinstance(summary.dependency_counts, dict)
+    assert isinstance(summary.noun_chunk_root_counts, dict)
+
+
 def test_tokenize_empty() -> None:
     """Tokenizing empty input returns an empty list."""
     assert spacy_tokenize("") == []
@@ -185,3 +198,15 @@ def test_document_empty() -> None:
     assert summary.dependencies.tokens == []
     assert summary.noun_chunks.chunks == []
     assert summary.sentences.sentences == []
+
+
+def test_corpus_empty() -> None:
+    """Corpus analysis of empty input returns empty structures."""
+    summary = spacy_corpus([])
+    assert summary.documents == []
+    assert summary.document_count == 0
+    assert summary.token_count == 0
+    assert summary.pos_counts == {}
+    assert summary.entity_label_counts == {}
+    assert summary.dependency_counts == {}
+    assert summary.noun_chunk_root_counts == {}

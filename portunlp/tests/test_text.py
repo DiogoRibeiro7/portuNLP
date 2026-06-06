@@ -3,11 +3,14 @@ from pathlib import Path
 import pytest
 
 from portunlp import (
+    CorpusStatistics,
     PORTUGUESE_STOPWORDS,
     ProcessedText,
+    analyze_corpus,
     apply_orth_rules,
     clean_social,
     filter_stopwords,
+    generate_ngrams,
     get_stopwords,
     load_dict,
     map_pos_tags,
@@ -16,9 +19,11 @@ from portunlp import (
     normalize_text,
     preprocess_text,
     remove_emoji,
+    term_frequencies,
     tokenize_pt,
     tokenize_text,
 )
+from portunlp import text as text_module
 
 
 def test_normalize_text_applies_expected_steps() -> None:
@@ -62,6 +67,17 @@ def test_filter_stopwords_removes_configured_words() -> None:
     assert filter_stopwords(["ação", "bonita"], stopwords={"acao"}, normalize=True) == ["bonita"]
 
 
+def test_generate_ngrams_builds_contiguous_sequences() -> None:
+    """N-gram generation preserves order and contiguity."""
+    assert generate_ngrams(["um", "dois", "tres"], 2) == [("um", "dois"), ("dois", "tres")]
+    assert generate_ngrams(["um"], 2) == []
+
+
+def test_term_frequencies_counts_tokens() -> None:
+    """Token frequency counting aggregates repeated tokens."""
+    assert term_frequencies(["casa", "casa", "bonita"]) == {"casa": 2, "bonita": 1}
+
+
 def test_load_dict_reads_non_empty_lines(tmp_path: Path) -> None:
     """Dictionary loading trims whitespace and skips blanks."""
     dictionary_path = tmp_path / "sample_dict.txt"
@@ -99,6 +115,27 @@ def test_preprocess_text_uses_native_sentence_segmentation_by_default() -> None:
     assert result.tokens == ["ola", "tudo", "bem"]
 
 
+def test_analyze_corpus_aggregates_document_statistics() -> None:
+    """Corpus analysis aggregates frequencies and n-grams across documents."""
+    result = analyze_corpus(
+        ["A casa bonita", "A casa azul"],
+        remove_stopwords=True,
+        ngram_size=2,
+    )
+    assert isinstance(result, CorpusStatistics)
+    assert result.document_count == 2
+    assert result.token_count == 4
+    assert result.unique_token_count == 3
+    assert result.frequencies == {"casa": 2, "bonita": 1, "azul": 1}
+    assert result.ngrams == {("casa", "bonita"): 1, ("casa", "azul"): 1}
+
+
+def test_analyze_corpus_validates_ngram_size() -> None:
+    """Corpus analysis rejects invalid n-gram sizes."""
+    with pytest.raises(ValueError, match="`ngram_size` must be at least 1"):
+        analyze_corpus(["texto"], ngram_size=0)
+
+
 def test_normalize_accents_and_apply_orth_rules() -> None:
     """Accent folding and orthographic replacements work independently."""
     assert normalize_accents("ação") == "acao"
@@ -111,3 +148,8 @@ def test_text_helpers_validate_argument_types() -> None:
         normalize_text(123)  # type: ignore[arg-type]
     with pytest.raises(TypeError, match="`custom_map` must map strings to strings"):
         map_slang("texto", custom_map={"vc": 1})  # type: ignore[dict-item]
+
+
+def test_cpp_backend_is_loaded_for_heavy_helpers() -> None:
+    """The compiled backend is available for token and corpus helpers."""
+    assert text_module._CPP_BACKEND is not None

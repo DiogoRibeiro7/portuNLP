@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections import Counter
+import importlib.util
+from importlib import import_module
+import os
 import re
+import site
 import unicodedata
 from pathlib import Path
+import sys
 from typing import Literal, Mapping
 
 from ._data import ORTHOGRAPHIC_RULES, PORTUGUESE_STOPWORDS, POS_TAG_MAP, SLANG_MAP
@@ -29,6 +35,76 @@ _EMOJI_PATTERN = re.compile(
 _WORD_BOUNDARY_TEMPLATE = r"(?<!\w){term}(?!\w)"
 
 
+def _candidate_cpp_module_paths() -> list[Path]:
+    """Collect likely locations for the compiled C++ extension.
+
+    Returns:
+        list[Path]: Candidate module paths.
+    """
+    package_dir = Path(__file__).resolve().parent
+    candidates: list[Path] = []
+    candidates.extend(package_dir.glob("_portunlp_cpp*.pyd"))
+    candidates.extend(package_dir.parent.glob("build/**/_portunlp_cpp*.pyd"))
+    candidates.extend(package_dir.parent.glob("dist/**/_portunlp_cpp*.pyd"))
+
+    site_directories = []
+    if hasattr(site, "getsitepackages"):
+        site_directories.extend(site.getsitepackages())
+    user_site = site.getusersitepackages()
+    if user_site:
+        site_directories.append(user_site)
+
+    for directory in site_directories:
+        candidates.extend(Path(directory).glob("portunlp/_portunlp_cpp*.pyd"))
+
+    return [candidate for candidate in candidates if candidate.exists()]
+
+
+def _load_cpp_backend():
+    """Load the compiled C++ backend when available.
+
+    Returns:
+        object | None: The compiled backend module, if found.
+    """
+    try:
+        return import_module("portunlp._portunlp_cpp")
+    except ModuleNotFoundError:
+        pass
+    except ImportError:
+        pass
+
+    strawberry_bin = Path("C:/Strawberry/c/bin")
+    last_error: Exception | None = None
+
+    for candidate in _candidate_cpp_module_paths():
+        try:
+            if os.name == "nt":
+                dll_directories = [candidate.parent]
+                if strawberry_bin.exists():
+                    dll_directories.append(strawberry_bin)
+
+                for directory in dll_directories:
+                    os.add_dll_directory(str(directory))
+
+            spec = importlib.util.spec_from_file_location("portunlp._portunlp_cpp", candidate)
+            if spec is None or spec.loader is None:
+                continue
+
+            module = importlib.util.module_from_spec(spec)
+            sys.modules["portunlp._portunlp_cpp"] = module
+            spec.loader.exec_module(module)
+            return module
+        except (ImportError, OSError) as exc:
+            last_error = exc
+
+    if last_error is not None:
+        raise last_error
+    return None
+
+
+_CPP_BACKEND = _load_cpp_backend()
+
+
 @dataclass(frozen=True)
 class ProcessedText:
     """Structured result of the text preprocessing pipeline.
@@ -46,6 +122,25 @@ class ProcessedText:
     sentences: list[str]
     tokens: list[str]
     filtered_tokens: list[str]
+
+
+@dataclass(frozen=True)
+class CorpusStatistics:
+    """Aggregate statistics for a collection of Portuguese texts.
+
+    Attributes:
+        document_count (int): Number of processed documents.
+        token_count (int): Total number of retained tokens.
+        unique_token_count (int): Number of unique retained tokens.
+        frequencies (dict[str, int]): Token frequency mapping.
+        ngrams (dict[tuple[str, ...], int]): N-gram frequency mapping.
+    """
+
+    document_count: int
+    token_count: int
+    unique_token_count: int
+    frequencies: dict[str, int]
+    ngrams: dict[tuple[str, ...], int]
 
 
 def _ensure_text(value: str, *, name: str = "text") -> str:
@@ -86,6 +181,48 @@ def _normalize_iterable(value: list[str] | tuple[str, ...] | set[str] | None, *,
     if not all(isinstance(item, str) for item in normalized):
         raise TypeError(f"`{name}` must contain only strings")
     return normalized
+
+
+def _ensure_texts(value: list[str] | tuple[str, ...], *, name: str = "texts") -> list[str]:
+    """Validate a sequence of texts.
+
+    Args:
+        value (list[str] | tuple[str, ...]): Candidate text sequence.
+        name (str): Parameter name for error messages.
+
+    Returns:
+        list[str]: Normalized text sequence.
+
+    Raises:
+        TypeError: If the sequence is invalid or contains non-string values.
+    """
+    if not isinstance(value, (list, tuple)):
+        raise TypeError(f"`{name}` must be a list or tuple of strings")
+    return _normalize_iterable(value, name=name)
+
+
+def _can_use_cpp_text(value: str) -> bool:
+    """Check whether text is safe for the current C++ string path.
+
+    Args:
+        value (str): Input text.
+
+    Returns:
+        bool: Whether the C++ backend should be used for this text.
+    """
+    return value.isascii()
+
+
+def _can_use_cpp_tokens(tokens: list[str]) -> bool:
+    """Check whether tokens are safe for the current C++ string path.
+
+    Args:
+        tokens (list[str]): Token sequence.
+
+    Returns:
+        bool: Whether the C++ backend should be used for these tokens.
+    """
+    return all(token.isascii() for token in tokens)
 
 
 def _iter_word_tokens(text: str) -> list[str]:
@@ -219,6 +356,8 @@ def tokenize_text(text: str, *, kind: Literal["word", "sentence"] = "word") -> l
         return []
 
     if kind == "word":
+        if _CPP_BACKEND is not None and _can_use_cpp_text(normalized_text):
+            return list(_CPP_BACKEND.split_words(normalized_text))
         return _iter_word_tokens(normalized_text)
     if kind == "sentence":
         return [
@@ -414,6 +553,44 @@ def filter_stopwords(
     ]
 
 
+def generate_ngrams(tokens: list[str] | tuple[str, ...], n: int) -> list[tuple[str, ...]]:
+    """Generate contiguous n-grams from a token sequence.
+
+    Args:
+        tokens (list[str] | tuple[str, ...]): Source token sequence.
+        n (int): N-gram size.
+
+    Returns:
+        list[tuple[str, ...]]: Contiguous n-grams.
+
+    Raises:
+        ValueError: If `n` is smaller than 1.
+    """
+    normalized_tokens = _normalize_iterable(tokens, name="tokens")
+    if n < 1:
+        raise ValueError("`n` must be at least 1")
+    if _CPP_BACKEND is not None and _can_use_cpp_tokens(normalized_tokens):
+        return [tuple(ngram) for ngram in _CPP_BACKEND.build_ngrams(normalized_tokens, n)]
+    if n > len(normalized_tokens):
+        return []
+    return [tuple(normalized_tokens[index : index + n]) for index in range(len(normalized_tokens) - n + 1)]
+
+
+def term_frequencies(tokens: list[str] | tuple[str, ...]) -> dict[str, int]:
+    """Count token frequencies.
+
+    Args:
+        tokens (list[str] | tuple[str, ...]): Source token sequence.
+
+    Returns:
+        dict[str, int]: Token frequency mapping.
+    """
+    normalized_tokens = _normalize_iterable(tokens, name="tokens")
+    if _CPP_BACKEND is not None and _can_use_cpp_tokens(normalized_tokens):
+        return dict(_CPP_BACKEND.count_term_frequencies(normalized_tokens))
+    return dict(Counter(normalized_tokens))
+
+
 def map_pos_tags(tags: list[str] | tuple[str, ...]) -> list[str]:
     """Map spaCy POS tags to the package's universal tagset.
 
@@ -486,6 +663,68 @@ def preprocess_text(
         sentences=sentences,
         tokens=tokens,
         filtered_tokens=filtered_tokens,
+    )
+
+
+def analyze_corpus(
+    texts: list[str] | tuple[str, ...],
+    *,
+    correct: bool = False,
+    remove_punct: bool = True,
+    social: bool = False,
+    custom_map: Mapping[str, str] | None = None,
+    remove_stopwords: bool = False,
+    use_spacy: bool = False,
+    ngram_size: int = 2,
+) -> CorpusStatistics:
+    """Aggregate token and n-gram statistics for multiple texts.
+
+    Args:
+        texts (list[str] | tuple[str, ...]): Input documents.
+        correct (bool): Whether to apply orthographic corrections.
+        remove_punct (bool): Whether to remove punctuation during normalization.
+        social (bool): Whether to apply social-text cleaning before normalization.
+        custom_map (Mapping[str, str] | None): Optional slang overrides.
+        remove_stopwords (bool): Whether to remove stopwords before aggregation.
+        use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        ngram_size (int): Size of contiguous n-grams to count.
+
+    Returns:
+        CorpusStatistics: Aggregate corpus statistics.
+    """
+    normalized_texts = _ensure_texts(texts)
+    if ngram_size < 1:
+        raise ValueError("`ngram_size` must be at least 1")
+
+    processed_documents = [
+        preprocess_text(
+            text,
+            correct=correct,
+            remove_punct=remove_punct,
+            social=social,
+            custom_map=custom_map,
+            remove_stopwords=remove_stopwords,
+            use_spacy=use_spacy,
+        )
+        for text in normalized_texts
+    ]
+
+    aggregated_tokens: list[str] = []
+    for document in processed_documents:
+        aggregated_tokens.extend(document.filtered_tokens if remove_stopwords else document.tokens)
+
+    frequencies = term_frequencies(aggregated_tokens)
+    ngram_counter: Counter[tuple[str, ...]] = Counter()
+    for document in processed_documents:
+        source_tokens = document.filtered_tokens if remove_stopwords else document.tokens
+        ngram_counter.update(generate_ngrams(source_tokens, ngram_size))
+
+    return CorpusStatistics(
+        document_count=len(processed_documents),
+        token_count=len(aggregated_tokens),
+        unique_token_count=len(frequencies),
+        frequencies=frequencies,
+        ngrams=dict(ngram_counter),
     )
 
 

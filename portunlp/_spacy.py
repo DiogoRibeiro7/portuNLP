@@ -284,6 +284,47 @@ class SpacyLexiconCorpus:
     lemmas_by_pos: dict[str, dict[str, int]]
 
 
+@dataclass(frozen=True)
+class SpacyCollocation:
+    """Structured collocation count extracted by spaCy.
+
+    Attributes:
+        terms (list[str]): Ordered terms in the collocation.
+        count (int): Number of occurrences.
+    """
+
+    terms: list[str]
+    count: int
+
+
+@dataclass(frozen=True)
+class SpacyCollocations:
+    """Collocation summary extracted by spaCy.
+
+    Attributes:
+        n (int): Size of each collocation.
+        collocations (list[SpacyCollocation]): Ranked collocation counts.
+    """
+
+    n: int
+    collocations: list[SpacyCollocation]
+
+
+@dataclass(frozen=True)
+class SpacyCollocationCorpus:
+    """Aggregate collocation summary for multiple texts.
+
+    Attributes:
+        document_count (int): Number of analyzed documents.
+        n (int): Size of each collocation.
+        collocations (list[SpacyCollocation]): Ranked collocation counts.
+    """
+
+    document_count: int
+    n: int
+    collocations: list[SpacyCollocation]
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -346,6 +387,44 @@ def _ensure_texts(texts: list[str] | tuple[str, ...], *, name: str = "texts") ->
     if not all(isinstance(text, str) for text in texts):
         raise TypeError(f"`{name}` must contain only strings")
     return list(texts)
+
+
+def _collect_collocation_counts(
+    doc: Any,
+    *,
+    n: int,
+    use_lemmas: bool,
+    include_stopwords: bool,
+) -> dict[tuple[str, ...], int]:
+    """Collect collocation counts from a spaCy document.
+
+    Args:
+        doc (Any): spaCy document.
+        n (int): Collocation size.
+        use_lemmas (bool): Whether to count lemmas instead of surface tokens.
+        include_stopwords (bool): Whether to retain stopwords.
+
+    Returns:
+        dict[tuple[str, ...], int]: Collocation counts keyed by term tuples.
+    """
+    terms: list[str] = []
+    for token in doc:
+        if not token.is_alpha:
+            continue
+        if not include_stopwords and token.is_stop:
+            continue
+
+        value = token.lemma_.lower() if use_lemmas else token.text.lower()
+        terms.append(value)
+
+    if n > len(terms):
+        return {}
+
+    counts: dict[tuple[str, ...], int] = {}
+    for index in range(len(terms) - n + 1):
+        key = tuple(terms[index : index + n])
+        counts[key] = counts.get(key, 0) + 1
+    return counts
 
 
 def _process_text(text: str, attribute: str) -> list[str]:
@@ -797,6 +876,102 @@ def spacy_lexicon_corpus(texts: list[str] | tuple[str, ...]) -> SpacyLexiconCorp
         token_frequencies=token_frequencies,
         lemma_frequencies=lemma_frequencies,
         lemmas_by_pos=lemmas_by_pos,
+    )
+
+
+def spacy_collocations(
+    text: str,
+    *,
+    n: int = 2,
+    use_lemmas: bool = True,
+    include_stopwords: bool = False,
+) -> SpacyCollocations:
+    """Return collocation counts extracted from spaCy tokens.
+
+    Args:
+        text (str): Text to analyze.
+        n (int): Collocation size.
+        use_lemmas (bool): Whether to count lemmas instead of surface tokens.
+        include_stopwords (bool): Whether to retain stopwords.
+
+    Returns:
+        SpacyCollocations: Ranked collocation counts.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+        ValueError: If `n` is smaller than 2.
+    """
+    if n < 2:
+        raise ValueError("`n` must be at least 2")
+
+    doc = _get_doc(text)
+    if doc is None:
+        return SpacyCollocations(n=n, collocations=[])
+
+    counts = _collect_collocation_counts(
+        doc,
+        n=n,
+        use_lemmas=use_lemmas,
+        include_stopwords=include_stopwords,
+    )
+    collocations = [
+        SpacyCollocation(terms=list(terms), count=count)
+        for terms, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+    return SpacyCollocations(n=n, collocations=collocations)
+
+
+def spacy_collocations_corpus(
+    texts: list[str] | tuple[str, ...],
+    *,
+    n: int = 2,
+    use_lemmas: bool = True,
+    include_stopwords: bool = False,
+) -> SpacyCollocationCorpus:
+    """Return aggregate collocation counts for multiple texts.
+
+    Args:
+        texts (list[str] | tuple[str, ...]): Texts to analyze.
+        n (int): Collocation size.
+        use_lemmas (bool): Whether to count lemmas instead of surface tokens.
+        include_stopwords (bool): Whether to retain stopwords.
+
+    Returns:
+        SpacyCollocationCorpus: Ranked collocation counts.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+        TypeError: If the input is not a sequence of strings.
+        ValueError: If `n` is smaller than 2.
+    """
+    if n < 2:
+        raise ValueError("`n` must be at least 2")
+
+    normalized_texts = _ensure_texts(texts)
+    counts: dict[tuple[str, ...], int] = {}
+
+    for text in normalized_texts:
+        doc = _get_doc(text)
+        if doc is None:
+            continue
+
+        partial_counts = _collect_collocation_counts(
+            doc,
+            n=n,
+            use_lemmas=use_lemmas,
+            include_stopwords=include_stopwords,
+        )
+        for terms, count in partial_counts.items():
+            counts[terms] = counts.get(terms, 0) + count
+
+    collocations = [
+        SpacyCollocation(terms=list(terms), count=count)
+        for terms, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+    return SpacyCollocationCorpus(
+        document_count=len(normalized_texts),
+        n=n,
+        collocations=collocations,
     )
 
 

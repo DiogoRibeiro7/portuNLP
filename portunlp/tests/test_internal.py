@@ -246,6 +246,49 @@ def test_spacy_lexicon_corpus_returns_aggregate_summary(fake_spacy):
     assert summary.lemmas_by_pos == {"NOUN": {"ana": 1, "casa": 2}}
 
 
+def test_spacy_collocations_returns_ranked_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_collocations("Ana Casa Porto", n=2)
+
+    assert summary.n == 2
+    assert [collocation.terms for collocation in summary.collocations] == [
+        ["ana", "casa"],
+        ["casa", "porto"],
+    ]
+    assert all(collocation.count == 1 for collocation in summary.collocations)
+
+
+def test_spacy_collocations_can_include_stopwords(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_collocations("a Casa Porto", n=2, include_stopwords=True)
+
+    assert [collocation.terms for collocation in summary.collocations] == [
+        ["a", "casa"],
+        ["casa", "porto"],
+    ]
+
+
+def test_spacy_collocations_corpus_returns_aggregate_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_collocations_corpus(["Ana Casa", "Ana Casa"], n=2)
+
+    assert summary.document_count == 2
+    assert summary.n == 2
+    assert len(summary.collocations) == 1
+    assert summary.collocations[0].terms == ["ana", "casa"]
+    assert summary.collocations[0].count == 2
+
+
+def test_spacy_collocations_validate_n(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+
+    with pytest.raises(ValueError, match="`n` must be at least 2"):
+        spacy_helpers.spacy_collocations("Ana Casa", n=1)
+
+    with pytest.raises(ValueError, match="`n` must be at least 2"):
+        spacy_helpers.spacy_collocations_corpus(["Ana Casa"], n=1)
+
+
 def test_spacy_to_dict_serializes_nested_summaries(fake_spacy):
     spacy_helpers, _ = fake_spacy
     summary = spacy_helpers.spacy_document("Ana Casa|Porto")

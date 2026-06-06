@@ -8,6 +8,8 @@ pytest.importorskip("pt_core_news_sm")
 
 from portunlp import (  # noqa: E402
     spacy_analyze,
+    spacy_collocations,
+    spacy_collocations_corpus,
     spacy_corpus,
     spacy_document,
     spacy_dependencies,
@@ -100,6 +102,21 @@ def test_spacy_lexicon_corpus(sample_text: str) -> None:
     assert isinstance(summary.token_frequencies, dict)
     assert isinstance(summary.lemma_frequencies, dict)
     assert isinstance(summary.lemmas_by_pos, dict)
+
+
+def test_spacy_collocations(sample_text: str) -> None:
+    """spaCy collocation summary returns ranked n-grams."""
+    summary = spacy_collocations(sample_text, n=2)
+    assert summary.n == 2
+    assert isinstance(summary.collocations, list)
+
+
+def test_spacy_collocations_corpus(sample_text: str) -> None:
+    """spaCy collocation corpus summary returns aggregate n-grams."""
+    summary = spacy_collocations_corpus([sample_text, sample_text], n=2)
+    assert summary.document_count == 2
+    assert summary.n == 2
+    assert isinstance(summary.collocations, list)
 
 
 def test_spacy_dependencies(sample_text: str) -> None:
@@ -218,6 +235,21 @@ def test_lexicon_corpus_empty() -> None:
     assert summary.token_frequencies == {}
     assert summary.lemma_frequencies == {}
     assert summary.lemmas_by_pos == {}
+
+
+def test_collocations_empty() -> None:
+    """Collocation analysis of empty input returns empty structures."""
+    summary = spacy_collocations("", n=2)
+    assert summary.n == 2
+    assert summary.collocations == []
+
+
+def test_collocations_corpus_empty() -> None:
+    """Collocation corpus analysis of empty input returns empty structures."""
+    summary = spacy_collocations_corpus([], n=2)
+    assert summary.document_count == 0
+    assert summary.n == 2
+    assert summary.collocations == []
 
 
 def test_dependencies_empty() -> None:

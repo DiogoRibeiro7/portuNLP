@@ -7,6 +7,7 @@ pytest.importorskip("pt_core_news_sm")
 
 from portunlp import (  # noqa: E402
     spacy_analyze,
+    spacy_dependencies,
     spacy_entities,
     spacy_lemmatize,
     spacy_morphology,
@@ -75,6 +76,14 @@ def test_spacy_entities(sample_text: str) -> None:
     assert isinstance(summary.label_counts, dict)
 
 
+def test_spacy_dependencies(sample_text: str) -> None:
+    """spaCy dependency summary returns relation metadata."""
+    summary = spacy_dependencies(sample_text)
+    assert summary.tokens
+    assert isinstance(summary.root, str)
+    assert isinstance(summary.dep_counts, dict)
+
+
 def test_tokenize_empty() -> None:
     """Tokenizing empty input returns an empty list."""
     assert spacy_tokenize("") == []
@@ -114,3 +123,11 @@ def test_entities_empty() -> None:
     summary = spacy_entities("")
     assert summary.entities == []
     assert summary.label_counts == {}
+
+
+def test_dependencies_empty() -> None:
+    """Dependency analysis of empty input returns empty structures."""
+    summary = spacy_dependencies("")
+    assert summary.tokens == []
+    assert summary.root == ""
+    assert summary.dep_counts == {}

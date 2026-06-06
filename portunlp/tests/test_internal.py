@@ -11,16 +11,19 @@ def fake_spacy(monkeypatch):
     module = types.ModuleType("spacy")
 
     class DummyToken:
-        def __init__(self, text: str) -> None:
+        def __init__(self, text: str, index: int) -> None:
             self.text = text
+            self.i = index
             self.lemma_ = text.lower()
             self.pos_ = "NOUN"
             self.tag_ = "NOUN__Sing"
+            self.dep_ = "ROOT" if index == 0 else "obj"
             self.is_alpha = text.isalpha()
             self.is_stop = text.lower() in {"a", "e"}
             self.morph = types.SimpleNamespace(
                 to_dict=lambda: {"Number": "Sing"} if text.isalpha() else {}
             )
+            self.head = self
 
     class DummySentence:
         def __init__(self, text: str) -> None:
@@ -35,7 +38,11 @@ def fake_spacy(monkeypatch):
 
     class DummyNLP:
         def __call__(self, text: str):
-            tokens = [DummyToken(t) for t in text.split()]
+            tokens = [DummyToken(token_text, index) for index, token_text in enumerate(text.split())]
+            if tokens:
+                root = tokens[0]
+                for token in tokens[1:]:
+                    token.head = root
 
             class DummyDoc(list):
                 @property
@@ -112,6 +119,18 @@ def test_spacy_entities_returns_structured_summary(fake_spacy):
     assert summary.entities[0].start == 0
     assert summary.entities[1].end == 2
     assert summary.label_counts == {"PER": 2}
+
+
+def test_spacy_dependencies_returns_structured_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_dependencies("Ana Casa")
+
+    assert [token.text for token in summary.tokens] == ["Ana", "Casa"]
+    assert summary.tokens[0].dep == "ROOT"
+    assert summary.tokens[1].head == "Ana"
+    assert summary.tokens[1].head_index == 0
+    assert summary.root == "Ana"
+    assert summary.dep_counts == {"ROOT": 1, "obj": 1}
 
 
 def test_error_when_model_missing(monkeypatch):

@@ -105,6 +105,42 @@ class SpacyEntities:
     label_counts: dict[str, int]
 
 
+@dataclass(frozen=True)
+class SpacyDependencyToken:
+    """Structured dependency information for a spaCy token.
+
+    Attributes:
+        text (str): Token surface form.
+        dep (str): Dependency label.
+        head (str): Surface form of the token head.
+        head_index (int): Token index of the head.
+        index (int): Token index in the document.
+        pos (str): spaCy POS tag.
+    """
+
+    text: str
+    dep: str
+    head: str
+    head_index: int
+    index: int
+    pos: str
+
+
+@dataclass(frozen=True)
+class SpacyDependencies:
+    """Aggregate dependency summary extracted by spaCy.
+
+    Attributes:
+        tokens (list[SpacyDependencyToken]): Structured dependency tokens.
+        root (str): Root token text, if available.
+        dep_counts (dict[str, int]): Frequency of dependency labels.
+    """
+
+    tokens: list[SpacyDependencyToken]
+    root: str
+    dep_counts: dict[str, int]
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -340,3 +376,41 @@ def spacy_entities(text: str) -> SpacyEntities:
         label_counts[entity.label] = label_counts.get(entity.label, 0) + 1
 
     return SpacyEntities(entities=entities, label_counts=label_counts)
+
+
+def spacy_dependencies(text: str) -> SpacyDependencies:
+    """Return dependency relations and aggregate label counts.
+
+    Args:
+        text (str): Text to analyze.
+
+    Returns:
+        SpacyDependencies: Structured dependency summary.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    doc = _get_doc(text)
+    if doc is None:
+        return SpacyDependencies(tokens=[], root="", dep_counts={})
+
+    tokens = [
+        SpacyDependencyToken(
+            text=token.text,
+            dep=token.dep_,
+            head=token.head.text,
+            head_index=token.head.i,
+            index=token.i,
+            pos=token.pos_,
+        )
+        for token in doc
+    ]
+
+    dep_counts: dict[str, int] = {}
+    root = ""
+    for token in tokens:
+        dep_counts[token.dep] = dep_counts.get(token.dep, 0) + 1
+        if token.dep == "ROOT" and not root:
+            root = token.text
+
+    return SpacyDependencies(tokens=tokens, root=root, dep_counts=dep_counts)

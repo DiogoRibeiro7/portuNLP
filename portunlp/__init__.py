@@ -2,12 +2,15 @@
 
 from ._data import ORTHOGRAPHIC_RULES, PORTUGUESE_STOPWORDS, POS_TAG_MAP, SLANG_MAP
 from ._spacy import (
+    SpacyDependencies,
+    SpacyDependencyToken,
     SpacyEntities,
     SpacyEntity,
     SpacyMorphToken,
     SpacyMorphology,
     SpacyToken,
     spacy_analyze,
+    spacy_dependencies,
     spacy_entities,
     spacy_lemmatize,
     spacy_morphology,
@@ -60,6 +63,8 @@ __all__ = [
     "SimilarityScore",
     "TextStatistics",
     "SLANG_MAP",
+    "SpacyDependencies",
+    "SpacyDependencyToken",
     "SpacyEntities",
     "SpacyEntity",
     "SpacyMorphToken",
@@ -89,6 +94,7 @@ __all__ = [
     "rank_similar_texts",
     "remove_emoji",
     "spacy_analyze",
+    "spacy_dependencies",
     "spacy_entities",
     "spacy_lemmatize",
     "spacy_morphology",

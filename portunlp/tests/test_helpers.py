@@ -1,4 +1,5 @@
 from typing import Any
+import json
 
 import pytest
 
@@ -17,6 +18,8 @@ from portunlp import (  # noqa: E402
     spacy_pos_tag,
     spacy_sentences,
     spacy_sentencize,
+    spacy_to_dict,
+    spacy_to_json,
     spacy_tokenize,
 )
 
@@ -123,6 +126,21 @@ def test_spacy_corpus(sample_text: str) -> None:
     assert isinstance(summary.entity_label_counts, dict)
     assert isinstance(summary.dependency_counts, dict)
     assert isinstance(summary.noun_chunk_root_counts, dict)
+
+
+def test_spacy_to_dict(sample_text: str) -> None:
+    """spaCy export helper converts summaries into nested dictionaries."""
+    payload = spacy_to_dict(spacy_document(sample_text))
+    assert payload["text"] == sample_text
+    assert isinstance(payload["tokens"], list)
+    assert isinstance(payload["sentences"], dict)
+
+
+def test_spacy_to_json(sample_text: str) -> None:
+    """spaCy export helper serializes summaries into JSON."""
+    payload = json.loads(spacy_to_json(spacy_corpus([sample_text]), indent=None))
+    assert payload["document_count"] == 1
+    assert payload["documents"][0]["text"] == sample_text
 
 
 def test_tokenize_empty() -> None:

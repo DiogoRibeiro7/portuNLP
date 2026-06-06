@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from importlib import import_module
+import json
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
@@ -687,3 +688,36 @@ def spacy_corpus(texts: list[str] | tuple[str, ...]) -> SpacyCorpus:
         dependency_counts=dependency_counts,
         noun_chunk_root_counts=noun_chunk_root_counts,
     )
+
+
+def spacy_to_dict(value: Any) -> Any:
+    """Convert spaCy summary dataclasses into plain Python data.
+
+    Args:
+        value (Any): Value to serialize.
+
+    Returns:
+        Any: JSON-safe nested dictionaries, lists, and scalar values.
+    """
+    if is_dataclass(value) and not isinstance(value, type):
+        return {key: spacy_to_dict(item) for key, item in asdict(value).items()}
+    if isinstance(value, dict):
+        return {key: spacy_to_dict(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [spacy_to_dict(item) for item in value]
+    if isinstance(value, tuple):
+        return [spacy_to_dict(item) for item in value]
+    return value
+
+
+def spacy_to_json(value: Any, *, indent: int | None = 2) -> str:
+    """Serialize spaCy summary dataclasses into a JSON string.
+
+    Args:
+        value (Any): Value to serialize.
+        indent (int | None): Optional JSON indentation level.
+
+    Returns:
+        str: JSON serialization of the provided value.
+    """
+    return json.dumps(spacy_to_dict(value), ensure_ascii=False, indent=indent)

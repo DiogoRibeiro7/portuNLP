@@ -1,4 +1,5 @@
 import importlib
+import json
 import types
 
 import pytest
@@ -224,6 +225,27 @@ def test_spacy_corpus_validates_input(fake_spacy):
 
     with pytest.raises(TypeError, match="`texts` must contain only strings"):
         spacy_helpers.spacy_corpus(["Ana Casa", 1])  # type: ignore[list-item]
+
+
+def test_spacy_to_dict_serializes_nested_summaries(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_document("Ana Casa|Porto")
+    payload = spacy_helpers.spacy_to_dict(summary)
+
+    assert payload["text"] == "Ana Casa|Porto"
+    assert payload["tokens"][0]["text"] == "Ana"
+    assert payload["entities"]["label_counts"] == {"PER": 3}
+    assert payload["sentences"]["sentence_count"] == 2
+
+
+def test_spacy_to_json_serializes_nested_summaries(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_corpus(["Ana Casa", "Porto"])
+    payload = json.loads(spacy_helpers.spacy_to_json(summary, indent=None))
+
+    assert payload["document_count"] == 2
+    assert payload["documents"][0]["text"] == "Ana Casa"
+    assert payload["dependency_counts"] == {"ROOT": 2, "obj": 1}
 
 
 def test_error_when_model_missing(monkeypatch):

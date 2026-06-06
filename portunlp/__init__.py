@@ -26,6 +26,8 @@ from ._spacy import (
     spacy_pos_tag,
     spacy_sentences,
     spacy_sentencize,
+    spacy_to_dict,
+    spacy_to_json,
     spacy_tokenize,
 )
 from .text import (
@@ -120,6 +122,8 @@ __all__ = [
     "spacy_pos_tag",
     "spacy_sentences",
     "spacy_sentencize",
+    "spacy_to_dict",
+    "spacy_to_json",
     "spacy_tokenize",
     "term_frequencies",
     "tokenize_pt",

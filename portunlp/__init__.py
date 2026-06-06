@@ -1,7 +1,17 @@
 """Portuguese NLP helpers for Python."""
 
 from ._data import ORTHOGRAPHIC_RULES, PORTUGUESE_STOPWORDS, POS_TAG_MAP, SLANG_MAP
-from ._spacy import SpacyToken, spacy_analyze, spacy_lemmatize, spacy_pos_tag, spacy_sentencize, spacy_tokenize
+from ._spacy import (
+    SpacyMorphToken,
+    SpacyMorphology,
+    SpacyToken,
+    spacy_analyze,
+    spacy_lemmatize,
+    spacy_morphology,
+    spacy_pos_tag,
+    spacy_sentencize,
+    spacy_tokenize,
+)
 from .text import (
     CorpusStatistics,
     KeywordScore,
@@ -47,6 +57,8 @@ __all__ = [
     "SimilarityScore",
     "TextStatistics",
     "SLANG_MAP",
+    "SpacyMorphToken",
+    "SpacyMorphology",
     "SpacyToken",
     "analyze_corpus",
     "analyze_text_metrics",
@@ -73,6 +85,7 @@ __all__ = [
     "remove_emoji",
     "spacy_analyze",
     "spacy_lemmatize",
+    "spacy_morphology",
     "spacy_pos_tag",
     "spacy_sentencize",
     "spacy_tokenize",

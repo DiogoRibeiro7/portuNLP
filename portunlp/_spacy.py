@@ -35,6 +35,46 @@ class SpacyToken:
     is_stop: bool
 
 
+@dataclass(frozen=True)
+class SpacyMorphToken:
+    """Structured token information with morphological features.
+
+    Attributes:
+        text (str): Original token text.
+        lemma (str): Lemmatized token form.
+        pos (str): spaCy POS tag.
+        tag (str): spaCy fine-grained tag.
+        morph (dict[str, str]): Morphological features emitted by spaCy.
+        is_alpha (bool): Whether the token contains only alphabetic characters.
+        is_stop (bool): Whether spaCy marks the token as a stopword.
+    """
+
+    text: str
+    lemma: str
+    pos: str
+    tag: str
+    morph: dict[str, str]
+    is_alpha: bool
+    is_stop: bool
+
+
+@dataclass(frozen=True)
+class SpacyMorphology:
+    """Aggregate morphology summary extracted by spaCy.
+
+    Attributes:
+        tokens (list[SpacyMorphToken]): Structured token information.
+        lemmas (list[str]): Lemmas for alphabetic tokens.
+        pos_counts (dict[str, int]): Frequency of POS tags.
+        morph_counts (dict[str, int]): Frequency of morphological feature pairs.
+    """
+
+    tokens: list[SpacyMorphToken]
+    lemmas: list[str]
+    pos_counts: dict[str, int]
+    morph_counts: dict[str, int]
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -189,3 +229,51 @@ def spacy_analyze(text: str) -> list[SpacyToken]:
         )
         for token in doc
     ]
+
+
+def spacy_morphology(text: str) -> SpacyMorphology:
+    """Return token-level morphology and aggregate grammatical counts.
+
+    Args:
+        text (str): Text to analyze.
+
+    Returns:
+        SpacyMorphology: Structured morphology summary.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    doc = _get_doc(text)
+    if doc is None:
+        return SpacyMorphology(tokens=[], lemmas=[], pos_counts={}, morph_counts={})
+
+    tokens: list[SpacyMorphToken] = []
+    pos_counts: dict[str, int] = {}
+    morph_counts: dict[str, int] = {}
+
+    for token in doc:
+        morph = dict(token.morph.to_dict())
+        tokens.append(
+            SpacyMorphToken(
+                text=token.text,
+                lemma=token.lemma_,
+                pos=token.pos_,
+                tag=token.tag_,
+                morph=morph,
+                is_alpha=token.is_alpha,
+                is_stop=token.is_stop,
+            )
+        )
+
+        pos_counts[token.pos_] = pos_counts.get(token.pos_, 0) + 1
+        for feature_name, feature_value in morph.items():
+            key = f"{feature_name}={feature_value}"
+            morph_counts[key] = morph_counts.get(key, 0) + 1
+
+    lemmas = [token.lemma for token in tokens if token.is_alpha]
+    return SpacyMorphology(
+        tokens=tokens,
+        lemmas=lemmas,
+        pos_counts=pos_counts,
+        morph_counts=morph_counts,
+    )

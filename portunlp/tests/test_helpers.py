@@ -5,7 +5,14 @@ import pytest
 spacy: Any = pytest.importorskip("spacy")
 pytest.importorskip("pt_core_news_sm")
 
-from portunlp import spacy_analyze, spacy_lemmatize, spacy_pos_tag, spacy_sentencize, spacy_tokenize  # noqa: E402
+from portunlp import (  # noqa: E402
+    spacy_analyze,
+    spacy_lemmatize,
+    spacy_morphology,
+    spacy_pos_tag,
+    spacy_sentencize,
+    spacy_tokenize,
+)
 
 
 @pytest.fixture(scope="module")
@@ -51,6 +58,15 @@ def test_spacy_analyze(sample_text: str) -> None:
     assert isinstance(tokens[0].is_alpha, bool)
 
 
+def test_spacy_morphology(sample_text: str) -> None:
+    """spaCy morphology summary returns token and count metadata."""
+    summary = spacy_morphology(sample_text)
+    assert summary.tokens
+    assert isinstance(summary.pos_counts, dict)
+    assert isinstance(summary.morph_counts, dict)
+    assert summary.lemmas
+
+
 def test_tokenize_empty() -> None:
     """Tokenizing empty input returns an empty list."""
     assert spacy_tokenize("") == []
@@ -74,3 +90,12 @@ def test_sentencize_empty() -> None:
 def test_analyze_empty() -> None:
     """Structured analysis of empty input returns an empty list."""
     assert spacy_analyze("") == []
+
+
+def test_morphology_empty() -> None:
+    """Morphology analysis of empty input returns empty structures."""
+    summary = spacy_morphology("")
+    assert summary.tokens == []
+    assert summary.lemmas == []
+    assert summary.pos_counts == {}
+    assert summary.morph_counts == {}

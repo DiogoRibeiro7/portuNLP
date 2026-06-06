@@ -15,8 +15,12 @@ def fake_spacy(monkeypatch):
             self.text = text
             self.lemma_ = text.lower()
             self.pos_ = "NOUN"
+            self.tag_ = "NOUN__Sing"
             self.is_alpha = text.isalpha()
             self.is_stop = text.lower() in {"a", "e"}
+            self.morph = types.SimpleNamespace(
+                to_dict=lambda: {"Number": "Sing"} if text.isalpha() else {}
+            )
 
     class DummySentence:
         def __init__(self, text: str) -> None:
@@ -70,6 +74,18 @@ def test_spacy_analyze_returns_structured_tokens(fake_spacy):
     assert tokens[0].is_stop is True
     assert tokens[1].lemma == "casa"
     assert tokens[1].pos == "NOUN"
+
+
+def test_spacy_morphology_returns_structured_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_morphology("a Casa")
+
+    assert [token.text for token in summary.tokens] == ["a", "Casa"]
+    assert summary.tokens[1].tag == "NOUN__Sing"
+    assert summary.tokens[1].morph == {"Number": "Sing"}
+    assert summary.lemmas == ["a", "casa"]
+    assert summary.pos_counts == {"NOUN": 2}
+    assert summary.morph_counts == {"Number=Sing": 2}
 
 
 def test_error_when_model_missing(monkeypatch):

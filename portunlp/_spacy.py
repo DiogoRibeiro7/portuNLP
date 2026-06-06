@@ -75,6 +75,36 @@ class SpacyMorphology:
     morph_counts: dict[str, int]
 
 
+@dataclass(frozen=True)
+class SpacyEntity:
+    """Structured named entity extracted by spaCy.
+
+    Attributes:
+        text (str): Entity surface form.
+        label (str): spaCy entity label.
+        start (int): Start token index.
+        end (int): End token index, exclusive.
+    """
+
+    text: str
+    label: str
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
+class SpacyEntities:
+    """Aggregate named-entity summary extracted by spaCy.
+
+    Attributes:
+        entities (list[SpacyEntity]): Structured named entities.
+        label_counts (dict[str, int]): Frequency of entity labels.
+    """
+
+    entities: list[SpacyEntity]
+    label_counts: dict[str, int]
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -277,3 +307,36 @@ def spacy_morphology(text: str) -> SpacyMorphology:
         pos_counts=pos_counts,
         morph_counts=morph_counts,
     )
+
+
+def spacy_entities(text: str) -> SpacyEntities:
+    """Return named entities and aggregate label counts.
+
+    Args:
+        text (str): Text to analyze.
+
+    Returns:
+        SpacyEntities: Structured named-entity summary.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    doc = _get_doc(text)
+    if doc is None:
+        return SpacyEntities(entities=[], label_counts={})
+
+    entities = [
+        SpacyEntity(
+            text=entity.text,
+            label=entity.label_,
+            start=entity.start,
+            end=entity.end,
+        )
+        for entity in doc.ents
+    ]
+
+    label_counts: dict[str, int] = {}
+    for entity in entities:
+        label_counts[entity.label] = label_counts.get(entity.label, 0) + 1
+
+    return SpacyEntities(entities=entities, label_counts=label_counts)

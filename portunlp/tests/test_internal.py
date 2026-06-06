@@ -26,11 +26,26 @@ def fake_spacy(monkeypatch):
         def __init__(self, text: str) -> None:
             self.text = text
 
+    class DummyEntity:
+        def __init__(self, text: str, label: str, start: int, end: int) -> None:
+            self.text = text
+            self.label_ = label
+            self.start = start
+            self.end = end
+
     class DummyNLP:
         def __call__(self, text: str):
             tokens = [DummyToken(t) for t in text.split()]
 
             class DummyDoc(list):
+                @property
+                def ents(self):
+                    entities = []
+                    for index, token in enumerate(self):
+                        if token.text[:1].isupper():
+                            entities.append(DummyEntity(token.text, "PER", index, index + 1))
+                    return entities
+
                 @property
                 def sents(self):
                     return [DummySentence(sentence.strip()) for sentence in text.split("|") if sentence.strip()]
@@ -86,6 +101,17 @@ def test_spacy_morphology_returns_structured_summary(fake_spacy):
     assert summary.lemmas == ["a", "casa"]
     assert summary.pos_counts == {"NOUN": 2}
     assert summary.morph_counts == {"Number=Sing": 2}
+
+
+def test_spacy_entities_returns_structured_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_entities("Ana Casa")
+
+    assert [entity.text for entity in summary.entities] == ["Ana", "Casa"]
+    assert summary.entities[0].label == "PER"
+    assert summary.entities[0].start == 0
+    assert summary.entities[1].end == 2
+    assert summary.label_counts == {"PER": 2}
 
 
 def test_error_when_model_missing(monkeypatch):

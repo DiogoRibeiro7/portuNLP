@@ -7,6 +7,7 @@ pytest.importorskip("pt_core_news_sm")
 
 from portunlp import (  # noqa: E402
     spacy_analyze,
+    spacy_entities,
     spacy_lemmatize,
     spacy_morphology,
     spacy_pos_tag,
@@ -67,6 +68,13 @@ def test_spacy_morphology(sample_text: str) -> None:
     assert summary.lemmas
 
 
+def test_spacy_entities(sample_text: str) -> None:
+    """spaCy entity summary returns entity and label metadata."""
+    summary = spacy_entities(sample_text)
+    assert isinstance(summary.entities, list)
+    assert isinstance(summary.label_counts, dict)
+
+
 def test_tokenize_empty() -> None:
     """Tokenizing empty input returns an empty list."""
     assert spacy_tokenize("") == []
@@ -99,3 +107,10 @@ def test_morphology_empty() -> None:
     assert summary.lemmas == []
     assert summary.pos_counts == {}
     assert summary.morph_counts == {}
+
+
+def test_entities_empty() -> None:
+    """Entity analysis of empty input returns empty structures."""
+    summary = spacy_entities("")
+    assert summary.entities == []
+    assert summary.label_counts == {}

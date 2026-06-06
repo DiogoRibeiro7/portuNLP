@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from collections import Counter
 import importlib.util
+import math
 from importlib import import_module
 import os
 import re
@@ -141,6 +142,19 @@ class CorpusStatistics:
     unique_token_count: int
     frequencies: dict[str, int]
     ngrams: dict[tuple[str, ...], int]
+
+
+@dataclass(frozen=True)
+class KeywordScore:
+    """Weighted keyword score for a token.
+
+    Attributes:
+        token (str): Token string.
+        score (float): TF-IDF-style score.
+    """
+
+    token: str
+    score: float
 
 
 def _ensure_text(value: str, *, name: str = "text") -> str:
@@ -726,6 +740,122 @@ def analyze_corpus(
         frequencies=frequencies,
         ngrams=dict(ngram_counter),
     )
+
+
+def compute_inverse_document_frequency(
+    texts: list[str] | tuple[str, ...],
+    *,
+    correct: bool = False,
+    remove_punct: bool = True,
+    social: bool = False,
+    custom_map: Mapping[str, str] | None = None,
+    remove_stopwords: bool = False,
+    use_spacy: bool = False,
+) -> dict[str, float]:
+    """Compute smoothed inverse document frequency values for a corpus.
+
+    Args:
+        texts (list[str] | tuple[str, ...]): Input documents.
+        correct (bool): Whether to apply orthographic corrections.
+        remove_punct (bool): Whether to remove punctuation during normalization.
+        social (bool): Whether to apply social-text cleaning before normalization.
+        custom_map (Mapping[str, str] | None): Optional slang overrides.
+        remove_stopwords (bool): Whether to remove stopwords before scoring.
+        use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+
+    Returns:
+        dict[str, float]: Smoothed IDF values by token.
+    """
+    normalized_texts = _ensure_texts(texts)
+    if not normalized_texts:
+        return {}
+
+    document_frequencies: Counter[str] = Counter()
+    for text in normalized_texts:
+        processed = preprocess_text(
+            text,
+            correct=correct,
+            remove_punct=remove_punct,
+            social=social,
+            custom_map=custom_map,
+            remove_stopwords=remove_stopwords,
+            use_spacy=use_spacy,
+        )
+        source_tokens = processed.filtered_tokens if remove_stopwords else processed.tokens
+        document_frequencies.update(set(source_tokens))
+
+    total_documents = len(normalized_texts)
+    return {
+        token: math.log((1 + total_documents) / (1 + document_frequency)) + 1.0
+        for token, document_frequency in document_frequencies.items()
+    }
+
+
+def extract_keywords(
+    text: str,
+    *,
+    corpus: list[str] | tuple[str, ...] | None = None,
+    top_k: int = 10,
+    correct: bool = False,
+    remove_punct: bool = True,
+    social: bool = False,
+    custom_map: Mapping[str, str] | None = None,
+    remove_stopwords: bool = True,
+    use_spacy: bool = False,
+) -> list[KeywordScore]:
+    """Extract weighted keywords from a text using TF-IDF-style scoring.
+
+    Args:
+        text (str): Input document.
+        corpus (list[str] | tuple[str, ...] | None): Optional corpus for IDF estimation.
+        top_k (int): Maximum number of keywords to return.
+        correct (bool): Whether to apply orthographic corrections.
+        remove_punct (bool): Whether to remove punctuation during normalization.
+        social (bool): Whether to apply social-text cleaning before normalization.
+        custom_map (Mapping[str, str] | None): Optional slang overrides.
+        remove_stopwords (bool): Whether to remove stopwords before scoring.
+        use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+
+    Returns:
+        list[KeywordScore]: Ranked keyword scores.
+    """
+    if top_k < 1:
+        raise ValueError("`top_k` must be at least 1")
+
+    processed = preprocess_text(
+        text,
+        correct=correct,
+        remove_punct=remove_punct,
+        social=social,
+        custom_map=custom_map,
+        remove_stopwords=remove_stopwords,
+        use_spacy=use_spacy,
+    )
+    tokens = processed.filtered_tokens if remove_stopwords else processed.tokens
+    if not tokens:
+        return []
+
+    frequencies = term_frequencies(tokens)
+    reference_corpus = [text] if corpus is None else [text, *_ensure_texts(corpus)]
+    idf_values = compute_inverse_document_frequency(
+        reference_corpus,
+        correct=correct,
+        remove_punct=remove_punct,
+        social=social,
+        custom_map=custom_map,
+        remove_stopwords=remove_stopwords,
+        use_spacy=use_spacy,
+    )
+
+    token_count = len(tokens)
+    scores = [
+        KeywordScore(
+            token=token,
+            score=(frequency / token_count) * idf_values.get(token, 1.0),
+        )
+        for token, frequency in frequencies.items()
+    ]
+    return sorted(scores, key=lambda keyword: (-keyword.score, keyword.token))[:top_k]
 
 
 def lemmatize_pt(text: str) -> list[str]:

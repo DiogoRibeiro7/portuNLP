@@ -4,11 +4,14 @@ import pytest
 
 from portunlp import (
     CorpusStatistics,
+    KeywordScore,
     PORTUGUESE_STOPWORDS,
     ProcessedText,
     analyze_corpus,
     apply_orth_rules,
     clean_social,
+    compute_inverse_document_frequency,
+    extract_keywords,
     filter_stopwords,
     generate_ngrams,
     get_stopwords,
@@ -134,6 +137,31 @@ def test_analyze_corpus_validates_ngram_size() -> None:
     """Corpus analysis rejects invalid n-gram sizes."""
     with pytest.raises(ValueError, match="`ngram_size` must be at least 1"):
         analyze_corpus(["texto"], ngram_size=0)
+
+
+def test_compute_inverse_document_frequency_scores_rarer_terms_higher() -> None:
+    """IDF assigns higher weights to rarer tokens."""
+    idf = compute_inverse_document_frequency(["casa bonita", "casa azul"])
+    assert idf["bonita"] > idf["casa"]
+    assert idf["azul"] > idf["casa"]
+
+
+def test_extract_keywords_returns_ranked_keyword_scores() -> None:
+    """Keyword extraction returns scored tokens ordered by relevance."""
+    keywords = extract_keywords(
+        "A casa bonita e bonita",
+        corpus=["A casa azul", "Casa verde"],
+        top_k=2,
+    )
+    assert all(isinstance(keyword, KeywordScore) for keyword in keywords)
+    assert keywords[0].token == "bonita"
+    assert len(keywords) == 2
+
+
+def test_extract_keywords_validates_top_k() -> None:
+    """Keyword extraction rejects invalid top-k values."""
+    with pytest.raises(ValueError, match="`top_k` must be at least 1"):
+        extract_keywords("texto", top_k=0)
 
 
 def test_normalize_accents_and_apply_orth_rules() -> None:

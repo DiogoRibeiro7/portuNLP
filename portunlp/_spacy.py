@@ -252,6 +252,38 @@ class SpacyCorpus:
     noun_chunk_root_counts: dict[str, int]
 
 
+@dataclass(frozen=True)
+class SpacyLexicon:
+    """Lexical frequency summary extracted by spaCy.
+
+    Attributes:
+        token_frequencies (dict[str, int]): Lowercased alphabetic token counts.
+        lemma_frequencies (dict[str, int]): Lowercased alphabetic lemma counts.
+        lemmas_by_pos (dict[str, dict[str, int]]): Lemma counts grouped by POS tag.
+    """
+
+    token_frequencies: dict[str, int]
+    lemma_frequencies: dict[str, int]
+    lemmas_by_pos: dict[str, dict[str, int]]
+
+
+@dataclass(frozen=True)
+class SpacyLexiconCorpus:
+    """Aggregate lexical frequency summary for multiple texts.
+
+    Attributes:
+        document_count (int): Number of analyzed documents.
+        token_frequencies (dict[str, int]): Lowercased alphabetic token counts.
+        lemma_frequencies (dict[str, int]): Lowercased alphabetic lemma counts.
+        lemmas_by_pos (dict[str, dict[str, int]]): Lemma counts grouped by POS tag.
+    """
+
+    document_count: int
+    token_frequencies: dict[str, int]
+    lemma_frequencies: dict[str, int]
+    lemmas_by_pos: dict[str, dict[str, int]]
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -687,6 +719,84 @@ def spacy_corpus(texts: list[str] | tuple[str, ...]) -> SpacyCorpus:
         entity_label_counts=entity_label_counts,
         dependency_counts=dependency_counts,
         noun_chunk_root_counts=noun_chunk_root_counts,
+    )
+
+
+def spacy_lexicon(text: str) -> SpacyLexicon:
+    """Return lemma and token frequency summaries extracted by spaCy.
+
+    Args:
+        text (str): Text to analyze.
+
+    Returns:
+        SpacyLexicon: Lexical frequency summary for the text.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    doc = _get_doc(text)
+    if doc is None:
+        return SpacyLexicon(token_frequencies={}, lemma_frequencies={}, lemmas_by_pos={})
+
+    token_frequencies: dict[str, int] = {}
+    lemma_frequencies: dict[str, int] = {}
+    lemmas_by_pos: dict[str, dict[str, int]] = {}
+
+    for token in doc:
+        if not token.is_alpha:
+            continue
+
+        normalized_token = token.text.lower()
+        normalized_lemma = token.lemma_.lower()
+
+        token_frequencies[normalized_token] = token_frequencies.get(normalized_token, 0) + 1
+        lemma_frequencies[normalized_lemma] = lemma_frequencies.get(normalized_lemma, 0) + 1
+
+        pos_bucket = lemmas_by_pos.setdefault(token.pos_, {})
+        pos_bucket[normalized_lemma] = pos_bucket.get(normalized_lemma, 0) + 1
+
+    return SpacyLexicon(
+        token_frequencies=token_frequencies,
+        lemma_frequencies=lemma_frequencies,
+        lemmas_by_pos=lemmas_by_pos,
+    )
+
+
+def spacy_lexicon_corpus(texts: list[str] | tuple[str, ...]) -> SpacyLexiconCorpus:
+    """Return aggregate lexical frequency summaries for multiple texts.
+
+    Args:
+        texts (list[str] | tuple[str, ...]): Texts to analyze.
+
+    Returns:
+        SpacyLexiconCorpus: Aggregate lexical frequency summary.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+        TypeError: If the input is not a sequence of strings.
+    """
+    normalized_texts = _ensure_texts(texts)
+    token_frequencies: dict[str, int] = {}
+    lemma_frequencies: dict[str, int] = {}
+    lemmas_by_pos: dict[str, dict[str, int]] = {}
+
+    for text in normalized_texts:
+        lexicon = spacy_lexicon(text)
+
+        for token, count in lexicon.token_frequencies.items():
+            token_frequencies[token] = token_frequencies.get(token, 0) + count
+        for lemma, count in lexicon.lemma_frequencies.items():
+            lemma_frequencies[lemma] = lemma_frequencies.get(lemma, 0) + count
+        for pos, lemma_counts in lexicon.lemmas_by_pos.items():
+            pos_bucket = lemmas_by_pos.setdefault(pos, {})
+            for lemma, count in lemma_counts.items():
+                pos_bucket[lemma] = pos_bucket.get(lemma, 0) + count
+
+    return SpacyLexiconCorpus(
+        document_count=len(normalized_texts),
+        token_frequencies=token_frequencies,
+        lemma_frequencies=lemma_frequencies,
+        lemmas_by_pos=lemmas_by_pos,
     )
 
 

@@ -227,6 +227,25 @@ def test_spacy_corpus_validates_input(fake_spacy):
         spacy_helpers.spacy_corpus(["Ana Casa", 1])  # type: ignore[list-item]
 
 
+def test_spacy_lexicon_returns_frequency_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_lexicon("Ana ana Casa")
+
+    assert summary.token_frequencies == {"ana": 2, "casa": 1}
+    assert summary.lemma_frequencies == {"ana": 2, "casa": 1}
+    assert summary.lemmas_by_pos == {"NOUN": {"ana": 2, "casa": 1}}
+
+
+def test_spacy_lexicon_corpus_returns_aggregate_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_lexicon_corpus(["Ana Casa", "Casa"])
+
+    assert summary.document_count == 2
+    assert summary.token_frequencies == {"ana": 1, "casa": 2}
+    assert summary.lemma_frequencies == {"ana": 1, "casa": 2}
+    assert summary.lemmas_by_pos == {"NOUN": {"ana": 1, "casa": 2}}
+
+
 def test_spacy_to_dict_serializes_nested_summaries(fake_spacy):
     spacy_helpers, _ = fake_spacy
     summary = spacy_helpers.spacy_document("Ana Casa|Porto")

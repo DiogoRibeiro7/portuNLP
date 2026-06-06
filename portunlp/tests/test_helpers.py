@@ -13,6 +13,8 @@ from portunlp import (  # noqa: E402
     spacy_dependencies,
     spacy_entities,
     spacy_lemmatize,
+    spacy_lexicon,
+    spacy_lexicon_corpus,
     spacy_morphology,
     spacy_noun_chunks,
     spacy_pos_tag,
@@ -81,6 +83,23 @@ def test_spacy_entities(sample_text: str) -> None:
     summary = spacy_entities(sample_text)
     assert isinstance(summary.entities, list)
     assert isinstance(summary.label_counts, dict)
+
+
+def test_spacy_lexicon(sample_text: str) -> None:
+    """spaCy lexical summary returns token and lemma frequencies."""
+    summary = spacy_lexicon(sample_text)
+    assert isinstance(summary.token_frequencies, dict)
+    assert isinstance(summary.lemma_frequencies, dict)
+    assert isinstance(summary.lemmas_by_pos, dict)
+
+
+def test_spacy_lexicon_corpus(sample_text: str) -> None:
+    """spaCy lexical corpus summary returns aggregate frequencies."""
+    summary = spacy_lexicon_corpus([sample_text, sample_text])
+    assert summary.document_count == 2
+    assert isinstance(summary.token_frequencies, dict)
+    assert isinstance(summary.lemma_frequencies, dict)
+    assert isinstance(summary.lemmas_by_pos, dict)
 
 
 def test_spacy_dependencies(sample_text: str) -> None:
@@ -182,6 +201,23 @@ def test_entities_empty() -> None:
     summary = spacy_entities("")
     assert summary.entities == []
     assert summary.label_counts == {}
+
+
+def test_lexicon_empty() -> None:
+    """Lexical analysis of empty input returns empty structures."""
+    summary = spacy_lexicon("")
+    assert summary.token_frequencies == {}
+    assert summary.lemma_frequencies == {}
+    assert summary.lemmas_by_pos == {}
+
+
+def test_lexicon_corpus_empty() -> None:
+    """Lexical corpus analysis of empty input returns empty structures."""
+    summary = spacy_lexicon_corpus([])
+    assert summary.document_count == 0
+    assert summary.token_frequencies == {}
+    assert summary.lemma_frequencies == {}
+    assert summary.lemmas_by_pos == {}
 
 
 def test_dependencies_empty() -> None:

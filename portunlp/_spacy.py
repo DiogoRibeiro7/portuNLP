@@ -325,6 +325,59 @@ class SpacyCollocationCorpus:
     collocations: list[SpacyCollocation]
 
 
+@dataclass(frozen=True)
+class SpacyConcordanceEntry:
+    """Structured concordance entry extracted by spaCy.
+
+    Attributes:
+        match (str): Matched token surface form.
+        lemma (str): Lemma of the matched token.
+        index (int): Token index in the document.
+        left_context (list[str]): Tokens to the left of the match.
+        right_context (list[str]): Tokens to the right of the match.
+        sentence (str): Sentence containing the match.
+    """
+
+    match: str
+    lemma: str
+    index: int
+    left_context: list[str]
+    right_context: list[str]
+    sentence: str
+
+
+@dataclass(frozen=True)
+class SpacyConcordance:
+    """Concordance summary extracted by spaCy.
+
+    Attributes:
+        query (str): Query term used to search the text.
+        use_lemmas (bool): Whether matching was lemma-based.
+        entries (list[SpacyConcordanceEntry]): Matched concordance entries.
+    """
+
+    query: str
+    use_lemmas: bool
+    entries: list[SpacyConcordanceEntry]
+
+
+@dataclass(frozen=True)
+class SpacyConcordanceCorpus:
+    """Aggregate concordance summary for multiple texts.
+
+    Attributes:
+        query (str): Query term used to search the corpus.
+        use_lemmas (bool): Whether matching was lemma-based.
+        document_count (int): Number of analyzed documents.
+        entries (list[SpacyConcordanceEntry]): Matched concordance entries.
+    """
+
+    query: str
+    use_lemmas: bool
+    document_count: int
+    entries: list[SpacyConcordanceEntry]
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -425,6 +478,26 @@ def _collect_collocation_counts(
         key = tuple(terms[index : index + n])
         counts[key] = counts.get(key, 0) + 1
     return counts
+
+
+def _sentence_text_for_token(doc: Any, token: Any) -> str:
+    """Resolve the sentence text for a token.
+
+    Args:
+        doc (Any): spaCy document.
+        token (Any): spaCy token.
+
+    Returns:
+        str: Sentence text containing the token.
+    """
+    sentence = getattr(token, "sent", None)
+    if sentence is not None:
+        return sentence.text
+
+    for candidate in doc.sents:
+        if candidate.start <= token.i < candidate.end:
+            return candidate.text
+    return ""
 
 
 def _process_text(text: str, attribute: str) -> list[str]:
@@ -972,6 +1045,109 @@ def spacy_collocations_corpus(
         document_count=len(normalized_texts),
         n=n,
         collocations=collocations,
+    )
+
+
+def spacy_concordance(
+    text: str,
+    query: str,
+    *,
+    window: int = 3,
+    use_lemmas: bool = True,
+) -> SpacyConcordance:
+    """Return concordance entries for a query term.
+
+    Args:
+        text (str): Text to analyze.
+        query (str): Query term to match.
+        window (int): Number of context tokens on each side.
+        use_lemmas (bool): Whether to match using lemmas instead of surface tokens.
+
+    Returns:
+        SpacyConcordance: Concordance entries for the query.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+        ValueError: If `window` is negative or `query` is empty.
+    """
+    if window < 0:
+        raise ValueError("`window` must be at least 0")
+    if not query.strip():
+        raise ValueError("`query` must not be empty")
+
+    doc = _get_doc(text)
+    normalized_query = query.strip().lower()
+    if doc is None:
+        return SpacyConcordance(query=normalized_query, use_lemmas=use_lemmas, entries=[])
+
+    entries: list[SpacyConcordanceEntry] = []
+    tokens = list(doc)
+    for token in tokens:
+        candidate = token.lemma_.lower() if use_lemmas else token.text.lower()
+        if candidate != normalized_query:
+            continue
+
+        left_slice = tokens[max(0, token.i - window) : token.i]
+        right_slice = tokens[token.i + 1 : token.i + 1 + window]
+        entries.append(
+            SpacyConcordanceEntry(
+                match=token.text,
+                lemma=token.lemma_.lower(),
+                index=token.i,
+                left_context=[context.text for context in left_slice],
+                right_context=[context.text for context in right_slice],
+                sentence=_sentence_text_for_token(doc, token),
+            )
+        )
+
+    return SpacyConcordance(query=normalized_query, use_lemmas=use_lemmas, entries=entries)
+
+
+def spacy_concordance_corpus(
+    texts: list[str] | tuple[str, ...],
+    query: str,
+    *,
+    window: int = 3,
+    use_lemmas: bool = True,
+) -> SpacyConcordanceCorpus:
+    """Return concordance entries for a query across multiple texts.
+
+    Args:
+        texts (list[str] | tuple[str, ...]): Texts to analyze.
+        query (str): Query term to match.
+        window (int): Number of context tokens on each side.
+        use_lemmas (bool): Whether to match using lemmas instead of surface tokens.
+
+    Returns:
+        SpacyConcordanceCorpus: Concordance entries across the corpus.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+        TypeError: If the input is not a sequence of strings.
+        ValueError: If `window` is negative or `query` is empty.
+    """
+    normalized_texts = _ensure_texts(texts)
+    if window < 0:
+        raise ValueError("`window` must be at least 0")
+    if not query.strip():
+        raise ValueError("`query` must not be empty")
+
+    normalized_query = query.strip().lower()
+    entries: list[SpacyConcordanceEntry] = []
+    for text in normalized_texts:
+        summary = spacy_concordance(
+            text,
+            normalized_query,
+            window=window,
+            use_lemmas=use_lemmas,
+        )
+        entries.extend(summary.entries)
+
+    return SpacyConcordanceCorpus(
+        query=normalized_query,
+        use_lemmas=use_lemmas,
+        document_count=len(normalized_texts),
+        entries=entries,
     )
 
 

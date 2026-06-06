@@ -10,6 +10,8 @@ from portunlp import (  # noqa: E402
     spacy_analyze,
     spacy_collocations,
     spacy_collocations_corpus,
+    spacy_concordance,
+    spacy_concordance_corpus,
     spacy_corpus,
     spacy_document,
     spacy_dependencies,
@@ -117,6 +119,22 @@ def test_spacy_collocations_corpus(sample_text: str) -> None:
     assert summary.document_count == 2
     assert summary.n == 2
     assert isinstance(summary.collocations, list)
+
+
+def test_spacy_concordance(sample_text: str) -> None:
+    """spaCy concordance returns context entries for a query."""
+    query = spacy_tokenize(sample_text)[0]
+    summary = spacy_concordance(sample_text, query, window=1, use_lemmas=False)
+    assert summary.query == query.lower()
+    assert isinstance(summary.entries, list)
+
+
+def test_spacy_concordance_corpus(sample_text: str) -> None:
+    """spaCy concordance corpus returns aggregate context entries."""
+    query = spacy_tokenize(sample_text)[0]
+    summary = spacy_concordance_corpus([sample_text, sample_text], query, window=1, use_lemmas=False)
+    assert summary.document_count == 2
+    assert isinstance(summary.entries, list)
 
 
 def test_spacy_dependencies(sample_text: str) -> None:
@@ -250,6 +268,20 @@ def test_collocations_corpus_empty() -> None:
     assert summary.document_count == 0
     assert summary.n == 2
     assert summary.collocations == []
+
+
+def test_concordance_empty() -> None:
+    """Concordance analysis of empty input returns empty structures."""
+    summary = spacy_concordance("", "casa", window=1)
+    assert summary.query == "casa"
+    assert summary.entries == []
+
+
+def test_concordance_corpus_empty() -> None:
+    """Concordance corpus analysis of empty input returns empty structures."""
+    summary = spacy_concordance_corpus([], "casa", window=1)
+    assert summary.document_count == 0
+    assert summary.entries == []
 
 
 def test_dependencies_empty() -> None:

@@ -25,6 +25,7 @@ def fake_spacy(monkeypatch):
                 to_dict=lambda: {"Number": "Sing"} if text.isalpha() else {}
             )
             self.head = self
+            self.sent = None
 
     class DummySentence:
         def __init__(self, text: str, start: int, end: int, root: DummyToken) -> None:
@@ -87,7 +88,10 @@ def fake_spacy(monkeypatch):
                         token_count = len(cleaned.split())
                         end = start + token_count
                         if end > start:
-                            sentences.append(DummySentence(cleaned, start, end, self[start]))
+                            sentence = DummySentence(cleaned, start, end, self[start])
+                            for token in self[start:end]:
+                                token.sent = sentence
+                            sentences.append(sentence)
                         start = end
                     return sentences
 
@@ -287,6 +291,38 @@ def test_spacy_collocations_validate_n(fake_spacy):
 
     with pytest.raises(ValueError, match="`n` must be at least 2"):
         spacy_helpers.spacy_collocations_corpus(["Ana Casa"], n=1)
+
+
+def test_spacy_concordance_returns_context_entries(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_concordance("Ana Casa Porto|Ana Mar", "ana", window=1)
+
+    assert summary.query == "ana"
+    assert summary.use_lemmas is True
+    assert len(summary.entries) == 2
+    assert summary.entries[0].right_context == ["Casa"]
+    assert summary.entries[0].sentence == "Ana Casa Porto"
+    assert summary.entries[1].left_context == ["Porto"]
+
+
+def test_spacy_concordance_corpus_returns_aggregate_entries(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_concordance_corpus(["Ana Casa", "Casa Ana"], "ana", window=1)
+
+    assert summary.document_count == 2
+    assert len(summary.entries) == 2
+    assert summary.entries[0].match == "Ana"
+    assert summary.entries[1].left_context == ["Casa"]
+
+
+def test_spacy_concordance_validates_inputs(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+
+    with pytest.raises(ValueError, match="`window` must be at least 0"):
+        spacy_helpers.spacy_concordance("Ana Casa", "ana", window=-1)
+
+    with pytest.raises(ValueError, match="`query` must not be empty"):
+        spacy_helpers.spacy_concordance("Ana Casa", "   ")
 
 
 def test_spacy_to_dict_serializes_nested_summaries(fake_spacy):

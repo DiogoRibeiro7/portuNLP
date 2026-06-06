@@ -26,8 +26,11 @@ def fake_spacy(monkeypatch):
             self.head = self
 
     class DummySentence:
-        def __init__(self, text: str) -> None:
+        def __init__(self, text: str, start: int, end: int, root: DummyToken) -> None:
             self.text = text
+            self.start = start
+            self.end = end
+            self.root = root
 
     class DummyEntity:
         def __init__(self, text: str, label: str, start: int, end: int) -> None:
@@ -45,7 +48,11 @@ def fake_spacy(monkeypatch):
 
     class DummyNLP:
         def __call__(self, text: str):
-            tokens = [DummyToken(token_text, index) for index, token_text in enumerate(text.split())]
+            normalized_text = text.replace("|", " ")
+            tokens = [
+                DummyToken(token_text, index)
+                for index, token_text in enumerate(normalized_text.split())
+            ]
             if tokens:
                 root = tokens[0]
                 for token in tokens[1:]:
@@ -70,7 +77,18 @@ def fake_spacy(monkeypatch):
 
                 @property
                 def sents(self):
-                    return [DummySentence(sentence.strip()) for sentence in text.split("|") if sentence.strip()]
+                    sentences = []
+                    start = 0
+                    for segment in text.split("|"):
+                        cleaned = segment.strip()
+                        if not cleaned:
+                            continue
+                        token_count = len(cleaned.split())
+                        end = start + token_count
+                        if end > start:
+                            sentences.append(DummySentence(cleaned, start, end, self[start]))
+                        start = end
+                    return sentences
 
             return DummyDoc(tokens)
 
@@ -157,6 +175,19 @@ def test_spacy_noun_chunks_returns_structured_summary(fake_spacy):
     assert summary.chunks[1].start == 1
     assert summary.chunks[1].end == 2
     assert summary.root_counts == {"Ana": 1, "Casa": 1}
+
+
+def test_spacy_sentences_returns_structured_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_sentences("Ana Casa|Porto")
+
+    assert summary.sentence_count == 2
+    assert summary.sentences[0].text == "Ana Casa"
+    assert summary.sentences[0].root == "Ana"
+    assert summary.sentences[0].token_count == 2
+    assert [entity.text for entity in summary.sentences[0].entities] == ["Ana", "Casa"]
+    assert summary.sentences[1].start == 2
+    assert summary.sentences[1].end == 3
 
 
 def test_error_when_model_missing(monkeypatch):

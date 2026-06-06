@@ -13,6 +13,7 @@ from portunlp import (  # noqa: E402
     spacy_morphology,
     spacy_noun_chunks,
     spacy_pos_tag,
+    spacy_sentences,
     spacy_sentencize,
     spacy_tokenize,
 )
@@ -92,6 +93,13 @@ def test_spacy_noun_chunks(sample_text: str) -> None:
     assert isinstance(summary.root_counts, dict)
 
 
+def test_spacy_sentences(sample_text: str) -> None:
+    """spaCy sentence summary returns sentence metadata."""
+    summary = spacy_sentences(sample_text)
+    assert isinstance(summary.sentences, list)
+    assert summary.sentence_count >= 1
+
+
 def test_tokenize_empty() -> None:
     """Tokenizing empty input returns an empty list."""
     assert spacy_tokenize("") == []
@@ -146,3 +154,10 @@ def test_noun_chunks_empty() -> None:
     summary = spacy_noun_chunks("")
     assert summary.chunks == []
     assert summary.root_counts == {}
+
+
+def test_sentences_empty() -> None:
+    """Sentence analysis of empty input returns empty structures."""
+    summary = spacy_sentences("")
+    assert summary.sentences == []
+    assert summary.sentence_count == 0

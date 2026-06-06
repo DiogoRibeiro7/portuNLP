@@ -171,6 +171,40 @@ class SpacyNounChunks:
     root_counts: dict[str, int]
 
 
+@dataclass(frozen=True)
+class SpacySentence:
+    """Structured sentence summary extracted by spaCy.
+
+    Attributes:
+        text (str): Sentence text.
+        start (int): Start token index.
+        end (int): End token index, exclusive.
+        root (str): Root token text for the sentence.
+        token_count (int): Number of tokens in the sentence.
+        entities (list[SpacyEntity]): Named entities that belong to the sentence.
+    """
+
+    text: str
+    start: int
+    end: int
+    root: str
+    token_count: int
+    entities: list[SpacyEntity]
+
+
+@dataclass(frozen=True)
+class SpacySentences:
+    """Aggregate sentence summary extracted by spaCy.
+
+    Attributes:
+        sentences (list[SpacySentence]): Structured sentence summaries.
+        sentence_count (int): Number of detected sentences.
+    """
+
+    sentences: list[SpacySentence]
+    sentence_count: int
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -477,3 +511,47 @@ def spacy_noun_chunks(text: str) -> SpacyNounChunks:
         root_counts[chunk.root] = root_counts.get(chunk.root, 0) + 1
 
     return SpacyNounChunks(chunks=chunks, root_counts=root_counts)
+
+
+def spacy_sentences(text: str) -> SpacySentences:
+    """Return sentence-level summaries with roots and entities.
+
+    Args:
+        text (str): Text to analyze.
+
+    Returns:
+        SpacySentences: Structured sentence summaries.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    doc = _get_doc(text)
+    if doc is None:
+        return SpacySentences(sentences=[], sentence_count=0)
+
+    entities = [
+        SpacyEntity(
+            text=entity.text,
+            label=entity.label_,
+            start=entity.start,
+            end=entity.end,
+        )
+        for entity in doc.ents
+    ]
+
+    sentences = [
+        SpacySentence(
+            text=sentence.text,
+            start=sentence.start,
+            end=sentence.end,
+            root=sentence.root.text,
+            token_count=sentence.end - sentence.start,
+            entities=[
+                entity
+                for entity in entities
+                if entity.start >= sentence.start and entity.end <= sentence.end
+            ],
+        )
+        for sentence in doc.sents
+    ]
+    return SpacySentences(sentences=sentences, sentence_count=len(sentences))

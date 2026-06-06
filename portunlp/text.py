@@ -157,6 +157,50 @@ class KeywordScore:
     score: float
 
 
+@dataclass(frozen=True)
+class SimilarityScore:
+    """Similarity score for a ranked document match.
+
+    Attributes:
+        index (int): Original position of the matched document.
+        text (str): Original matched document.
+        score (float): Cosine similarity score.
+    """
+
+    index: int
+    text: str
+    score: float
+
+
+@dataclass(frozen=True)
+class TextStatistics:
+    """Descriptive statistics for a single Portuguese text.
+
+    Attributes:
+        sentence_count (int): Number of detected sentences.
+        token_count (int): Number of analyzed tokens.
+        unique_token_count (int): Number of unique analyzed tokens.
+        character_count (int): Character count of the normalized text.
+        average_token_length (float): Mean token length in characters.
+        average_sentence_length (float): Mean sentence length in tokens.
+        lexical_diversity (float): Ratio of unique tokens to total tokens.
+        syllable_count (int): Estimated total syllable count.
+        average_syllables_per_word (float): Mean syllables per token.
+        flesch_reading_ease (float): Readability estimate based on Flesch-style scoring.
+    """
+
+    sentence_count: int
+    token_count: int
+    unique_token_count: int
+    character_count: int
+    average_token_length: float
+    average_sentence_length: float
+    lexical_diversity: float
+    syllable_count: int
+    average_syllables_per_word: float
+    flesch_reading_ease: float
+
+
 def _ensure_text(value: str, *, name: str = "text") -> str:
     """Validate a text argument.
 
@@ -276,6 +320,24 @@ def _remove_unicode_punctuation(text: str) -> str:
         str: Text without punctuation characters.
     """
     return "".join(character for character in text if not unicodedata.category(character).startswith("P"))
+
+
+def _count_syllables(token: str) -> int:
+    """Estimate the number of syllables in a Portuguese token.
+
+    Args:
+        token (str): Input token.
+
+    Returns:
+        int: Estimated syllable count.
+    """
+    normalized = normalize_accents(token).lower()
+    letters_only = "".join(character for character in normalized if character.isalpha())
+    if not letters_only:
+        return 0
+
+    vowel_groups = re.findall(r"[aeiouy]+", letters_only)
+    return max(1, len(vowel_groups))
 
 
 def normalize_accents(text: str) -> str:
@@ -856,6 +918,279 @@ def extract_keywords(
         for token, frequency in frequencies.items()
     ]
     return sorted(scores, key=lambda keyword: (-keyword.score, keyword.token))[:top_k]
+
+
+def _build_tfidf_vector(
+    text: str,
+    *,
+    corpus: list[str],
+    correct: bool,
+    remove_punct: bool,
+    social: bool,
+    custom_map: Mapping[str, str] | None,
+    remove_stopwords: bool,
+    use_spacy: bool,
+) -> dict[str, float]:
+    """Build a TF-IDF vector for a single document.
+
+    Args:
+        text (str): Input document.
+        corpus (list[str]): Reference corpus including the document.
+        correct (bool): Whether to apply orthographic corrections.
+        remove_punct (bool): Whether to remove punctuation during normalization.
+        social (bool): Whether to apply social-text cleaning before normalization.
+        custom_map (Mapping[str, str] | None): Optional slang overrides.
+        remove_stopwords (bool): Whether to remove stopwords before scoring.
+        use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+
+    Returns:
+        dict[str, float]: TF-IDF vector keyed by token.
+    """
+    processed = preprocess_text(
+        text,
+        correct=correct,
+        remove_punct=remove_punct,
+        social=social,
+        custom_map=custom_map,
+        remove_stopwords=remove_stopwords,
+        use_spacy=use_spacy,
+    )
+    tokens = processed.filtered_tokens if remove_stopwords else processed.tokens
+    if not tokens:
+        return {}
+
+    frequencies = term_frequencies(tokens)
+    idf_values = compute_inverse_document_frequency(
+        corpus,
+        correct=correct,
+        remove_punct=remove_punct,
+        social=social,
+        custom_map=custom_map,
+        remove_stopwords=remove_stopwords,
+        use_spacy=use_spacy,
+    )
+    token_count = len(tokens)
+    return {
+        token: (frequency / token_count) * idf_values.get(token, 1.0)
+        for token, frequency in frequencies.items()
+    }
+
+
+def _cosine_similarity(left: dict[str, float], right: dict[str, float]) -> float:
+    """Compute cosine similarity between sparse vectors.
+
+    Args:
+        left (dict[str, float]): Left sparse vector.
+        right (dict[str, float]): Right sparse vector.
+
+    Returns:
+        float: Cosine similarity score.
+    """
+    if not left or not right:
+        return 0.0
+
+    shared_tokens = set(left).intersection(right)
+    numerator = sum(left[token] * right[token] for token in shared_tokens)
+    left_norm = math.sqrt(sum(value * value for value in left.values()))
+    right_norm = math.sqrt(sum(value * value for value in right.values()))
+
+    if left_norm == 0.0 or right_norm == 0.0:
+        return 0.0
+    return numerator / (left_norm * right_norm)
+
+
+def compare_texts(
+    text: str,
+    other_text: str,
+    *,
+    corpus: list[str] | tuple[str, ...] | None = None,
+    correct: bool = False,
+    remove_punct: bool = True,
+    social: bool = False,
+    custom_map: Mapping[str, str] | None = None,
+    remove_stopwords: bool = True,
+    use_spacy: bool = False,
+) -> float:
+    """Compare two texts with cosine similarity over TF-IDF vectors.
+
+    Args:
+        text (str): First document.
+        other_text (str): Second document.
+        corpus (list[str] | tuple[str, ...] | None): Optional extra corpus for IDF estimation.
+        correct (bool): Whether to apply orthographic corrections.
+        remove_punct (bool): Whether to remove punctuation during normalization.
+        social (bool): Whether to apply social-text cleaning before normalization.
+        custom_map (Mapping[str, str] | None): Optional slang overrides.
+        remove_stopwords (bool): Whether to remove stopwords before scoring.
+        use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+
+    Returns:
+        float: Cosine similarity score in the range [0.0, 1.0].
+    """
+    first_text = _ensure_text(text)
+    second_text = _ensure_text(other_text)
+    reference_corpus = [first_text, second_text]
+    if corpus is not None:
+        reference_corpus.extend(_ensure_texts(corpus, name="corpus"))
+
+    left_vector = _build_tfidf_vector(
+        first_text,
+        corpus=reference_corpus,
+        correct=correct,
+        remove_punct=remove_punct,
+        social=social,
+        custom_map=custom_map,
+        remove_stopwords=remove_stopwords,
+        use_spacy=use_spacy,
+    )
+    right_vector = _build_tfidf_vector(
+        second_text,
+        corpus=reference_corpus,
+        correct=correct,
+        remove_punct=remove_punct,
+        social=social,
+        custom_map=custom_map,
+        remove_stopwords=remove_stopwords,
+        use_spacy=use_spacy,
+    )
+    return _cosine_similarity(left_vector, right_vector)
+
+
+def rank_similar_texts(
+    query: str,
+    texts: list[str] | tuple[str, ...],
+    *,
+    top_k: int = 5,
+    correct: bool = False,
+    remove_punct: bool = True,
+    social: bool = False,
+    custom_map: Mapping[str, str] | None = None,
+    remove_stopwords: bool = True,
+    use_spacy: bool = False,
+) -> list[SimilarityScore]:
+    """Rank corpus documents by similarity to a query document.
+
+    Args:
+        query (str): Query document.
+        texts (list[str] | tuple[str, ...]): Candidate documents.
+        top_k (int): Maximum number of matches to return.
+        correct (bool): Whether to apply orthographic corrections.
+        remove_punct (bool): Whether to remove punctuation during normalization.
+        social (bool): Whether to apply social-text cleaning before normalization.
+        custom_map (Mapping[str, str] | None): Optional slang overrides.
+        remove_stopwords (bool): Whether to remove stopwords before scoring.
+        use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+
+    Returns:
+        list[SimilarityScore]: Ranked similarity matches.
+    """
+    if top_k < 1:
+        raise ValueError("`top_k` must be at least 1")
+
+    query_text = _ensure_text(query, name="query")
+    candidates = _ensure_texts(texts)
+    if not candidates:
+        return []
+
+    reference_corpus = [query_text, *candidates]
+    query_vector = _build_tfidf_vector(
+        query_text,
+        corpus=reference_corpus,
+        correct=correct,
+        remove_punct=remove_punct,
+        social=social,
+        custom_map=custom_map,
+        remove_stopwords=remove_stopwords,
+        use_spacy=use_spacy,
+    )
+
+    scored_documents = [
+        SimilarityScore(
+            index=index,
+            text=document,
+            score=_cosine_similarity(
+                query_vector,
+                _build_tfidf_vector(
+                    document,
+                    corpus=reference_corpus,
+                    correct=correct,
+                    remove_punct=remove_punct,
+                    social=social,
+                    custom_map=custom_map,
+                    remove_stopwords=remove_stopwords,
+                    use_spacy=use_spacy,
+                ),
+            ),
+        )
+        for index, document in enumerate(candidates)
+    ]
+    return sorted(scored_documents, key=lambda match: (-match.score, match.index))[:top_k]
+
+
+def analyze_text_metrics(
+    text: str,
+    *,
+    correct: bool = False,
+    remove_punct: bool = True,
+    social: bool = False,
+    custom_map: Mapping[str, str] | None = None,
+    remove_stopwords: bool = False,
+    use_spacy: bool = False,
+) -> TextStatistics:
+    """Compute descriptive and readability metrics for a text.
+
+    Args:
+        text (str): Input document.
+        correct (bool): Whether to apply orthographic corrections.
+        remove_punct (bool): Whether to remove punctuation during normalization.
+        social (bool): Whether to apply social-text cleaning before normalization.
+        custom_map (Mapping[str, str] | None): Optional slang overrides.
+        remove_stopwords (bool): Whether to remove stopwords before analysis.
+        use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+
+    Returns:
+        TextStatistics: Structured text metrics.
+    """
+    processed = preprocess_text(
+        text,
+        correct=correct,
+        remove_punct=remove_punct,
+        social=social,
+        custom_map=custom_map,
+        remove_stopwords=remove_stopwords,
+        use_spacy=use_spacy,
+    )
+    tokens = processed.filtered_tokens if remove_stopwords else processed.tokens
+    sentence_count = len(processed.sentences)
+    token_count = len(tokens)
+    unique_token_count = len(set(tokens))
+    character_count = len(processed.normalized_text)
+    syllable_count = sum(_count_syllables(token) for token in tokens)
+
+    average_token_length = (
+        sum(len(token) for token in tokens) / token_count if token_count else 0.0
+    )
+    average_sentence_length = token_count / sentence_count if sentence_count else 0.0
+    lexical_diversity = unique_token_count / token_count if token_count else 0.0
+    average_syllables_per_word = syllable_count / token_count if token_count else 0.0
+    flesch_reading_ease = (
+        248.835 - (1.015 * average_sentence_length) - (84.6 * average_syllables_per_word)
+        if token_count and sentence_count
+        else 0.0
+    )
+
+    return TextStatistics(
+        sentence_count=sentence_count,
+        token_count=token_count,
+        unique_token_count=unique_token_count,
+        character_count=character_count,
+        average_token_length=average_token_length,
+        average_sentence_length=average_sentence_length,
+        lexical_diversity=lexical_diversity,
+        syllable_count=syllable_count,
+        average_syllables_per_word=average_syllables_per_word,
+        flesch_reading_ease=flesch_reading_ease,
+    )
 
 
 def lemmatize_pt(text: str) -> list[str]:

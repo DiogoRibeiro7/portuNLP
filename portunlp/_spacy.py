@@ -141,6 +141,36 @@ class SpacyDependencies:
     dep_counts: dict[str, int]
 
 
+@dataclass(frozen=True)
+class SpacyNounChunk:
+    """Structured noun chunk extracted by spaCy.
+
+    Attributes:
+        text (str): Chunk surface form.
+        root (str): Root token of the chunk.
+        start (int): Start token index.
+        end (int): End token index, exclusive.
+    """
+
+    text: str
+    root: str
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
+class SpacyNounChunks:
+    """Aggregate noun-chunk summary extracted by spaCy.
+
+    Attributes:
+        chunks (list[SpacyNounChunk]): Structured noun chunks.
+        root_counts (dict[str, int]): Frequency of noun-chunk roots.
+    """
+
+    chunks: list[SpacyNounChunk]
+    root_counts: dict[str, int]
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -414,3 +444,36 @@ def spacy_dependencies(text: str) -> SpacyDependencies:
             root = token.text
 
     return SpacyDependencies(tokens=tokens, root=root, dep_counts=dep_counts)
+
+
+def spacy_noun_chunks(text: str) -> SpacyNounChunks:
+    """Return noun chunks and aggregate root counts.
+
+    Args:
+        text (str): Text to analyze.
+
+    Returns:
+        SpacyNounChunks: Structured noun-chunk summary.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    doc = _get_doc(text)
+    if doc is None:
+        return SpacyNounChunks(chunks=[], root_counts={})
+
+    chunks = [
+        SpacyNounChunk(
+            text=chunk.text,
+            root=chunk.root.text,
+            start=chunk.start,
+            end=chunk.end,
+        )
+        for chunk in doc.noun_chunks
+    ]
+
+    root_counts: dict[str, int] = {}
+    for chunk in chunks:
+        root_counts[chunk.root] = root_counts.get(chunk.root, 0) + 1
+
+    return SpacyNounChunks(chunks=chunks, root_counts=root_counts)

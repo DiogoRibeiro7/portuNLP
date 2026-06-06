@@ -36,6 +36,13 @@ def fake_spacy(monkeypatch):
             self.start = start
             self.end = end
 
+    class DummyNounChunk:
+        def __init__(self, text: str, root: DummyToken, start: int, end: int) -> None:
+            self.text = text
+            self.root = root
+            self.start = start
+            self.end = end
+
     class DummyNLP:
         def __call__(self, text: str):
             tokens = [DummyToken(token_text, index) for index, token_text in enumerate(text.split())]
@@ -52,6 +59,14 @@ def fake_spacy(monkeypatch):
                         if token.text[:1].isupper():
                             entities.append(DummyEntity(token.text, "PER", index, index + 1))
                     return entities
+
+                @property
+                def noun_chunks(self):
+                    chunks = []
+                    for index, token in enumerate(self):
+                        if token.is_alpha:
+                            chunks.append(DummyNounChunk(token.text, token, index, index + 1))
+                    return chunks
 
                 @property
                 def sents(self):
@@ -131,6 +146,17 @@ def test_spacy_dependencies_returns_structured_summary(fake_spacy):
     assert summary.tokens[1].head_index == 0
     assert summary.root == "Ana"
     assert summary.dep_counts == {"ROOT": 1, "obj": 1}
+
+
+def test_spacy_noun_chunks_returns_structured_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_noun_chunks("Ana Casa")
+
+    assert [chunk.text for chunk in summary.chunks] == ["Ana", "Casa"]
+    assert summary.chunks[0].root == "Ana"
+    assert summary.chunks[1].start == 1
+    assert summary.chunks[1].end == 2
+    assert summary.root_counts == {"Ana": 1, "Casa": 1}
 
 
 def test_error_when_model_missing(monkeypatch):

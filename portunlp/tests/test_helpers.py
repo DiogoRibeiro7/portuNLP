@@ -11,6 +11,7 @@ from portunlp import (  # noqa: E402
     spacy_entities,
     spacy_lemmatize,
     spacy_morphology,
+    spacy_noun_chunks,
     spacy_pos_tag,
     spacy_sentencize,
     spacy_tokenize,
@@ -84,6 +85,13 @@ def test_spacy_dependencies(sample_text: str) -> None:
     assert isinstance(summary.dep_counts, dict)
 
 
+def test_spacy_noun_chunks(sample_text: str) -> None:
+    """spaCy noun-chunk summary returns chunk metadata."""
+    summary = spacy_noun_chunks(sample_text)
+    assert isinstance(summary.chunks, list)
+    assert isinstance(summary.root_counts, dict)
+
+
 def test_tokenize_empty() -> None:
     """Tokenizing empty input returns an empty list."""
     assert spacy_tokenize("") == []
@@ -131,3 +139,10 @@ def test_dependencies_empty() -> None:
     assert summary.tokens == []
     assert summary.root == ""
     assert summary.dep_counts == {}
+
+
+def test_noun_chunks_empty() -> None:
+    """Noun-chunk analysis of empty input returns empty structures."""
+    summary = spacy_noun_chunks("")
+    assert summary.chunks == []
+    assert summary.root_counts == {}

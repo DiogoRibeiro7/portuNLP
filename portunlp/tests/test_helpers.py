@@ -7,6 +7,7 @@ pytest.importorskip("pt_core_news_sm")
 
 from portunlp import (  # noqa: E402
     spacy_analyze,
+    spacy_document,
     spacy_dependencies,
     spacy_entities,
     spacy_lemmatize,
@@ -100,6 +101,17 @@ def test_spacy_sentences(sample_text: str) -> None:
     assert summary.sentence_count >= 1
 
 
+def test_spacy_document(sample_text: str) -> None:
+    """spaCy document summary returns all major analysis sections."""
+    summary = spacy_document(sample_text)
+    assert summary.tokens
+    assert summary.morphology.tokens
+    assert isinstance(summary.entities.label_counts, dict)
+    assert isinstance(summary.dependencies.dep_counts, dict)
+    assert isinstance(summary.noun_chunks.root_counts, dict)
+    assert summary.sentences.sentence_count >= 1
+
+
 def test_tokenize_empty() -> None:
     """Tokenizing empty input returns an empty list."""
     assert spacy_tokenize("") == []
@@ -161,3 +173,15 @@ def test_sentences_empty() -> None:
     summary = spacy_sentences("")
     assert summary.sentences == []
     assert summary.sentence_count == 0
+
+
+def test_document_empty() -> None:
+    """Document analysis of empty input returns empty structures."""
+    summary = spacy_document("")
+    assert summary.text == ""
+    assert summary.tokens == []
+    assert summary.morphology.tokens == []
+    assert summary.entities.entities == []
+    assert summary.dependencies.tokens == []
+    assert summary.noun_chunks.chunks == []
+    assert summary.sentences.sentences == []

@@ -190,6 +190,19 @@ def test_spacy_sentences_returns_structured_summary(fake_spacy):
     assert summary.sentences[1].end == 3
 
 
+def test_spacy_document_returns_full_summary(fake_spacy):
+    spacy_helpers, _ = fake_spacy
+    summary = spacy_helpers.spacy_document("Ana Casa|Porto")
+
+    assert summary.text == "Ana Casa|Porto"
+    assert [token.text for token in summary.tokens] == ["Ana", "Casa", "Porto"]
+    assert summary.morphology.pos_counts == {"NOUN": 3}
+    assert summary.entities.label_counts == {"PER": 3}
+    assert summary.dependencies.root == "Ana"
+    assert summary.noun_chunks.root_counts == {"Ana": 1, "Casa": 1, "Porto": 1}
+    assert summary.sentences.sentence_count == 2
+
+
 def test_error_when_model_missing(monkeypatch):
     spacy_helpers = importlib.reload(importlib.import_module("portunlp._spacy"))
 

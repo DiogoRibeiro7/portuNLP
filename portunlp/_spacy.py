@@ -205,6 +205,29 @@ class SpacySentences:
     sentence_count: int
 
 
+@dataclass(frozen=True)
+class SpacyDocument:
+    """Structured document summary extracted by spaCy.
+
+    Attributes:
+        text (str): Original input text.
+        tokens (list[SpacyToken]): Structured token metadata.
+        morphology (SpacyMorphology): Morphology summary.
+        entities (SpacyEntities): Named-entity summary.
+        dependencies (SpacyDependencies): Dependency summary.
+        noun_chunks (SpacyNounChunks): Noun-chunk summary.
+        sentences (SpacySentences): Sentence summary.
+    """
+
+    text: str
+    tokens: list[SpacyToken]
+    morphology: SpacyMorphology
+    entities: SpacyEntities
+    dependencies: SpacyDependencies
+    noun_chunks: SpacyNounChunks
+    sentences: SpacySentences
+
+
 def _load_model() -> Language:
     """Load the spaCy Portuguese model lazily.
 
@@ -555,3 +578,27 @@ def spacy_sentences(text: str) -> SpacySentences:
         for sentence in doc.sents
     ]
     return SpacySentences(sentences=sentences, sentence_count=len(sentences))
+
+
+def spacy_document(text: str) -> SpacyDocument:
+    """Return a full structured document summary extracted by spaCy.
+
+    Args:
+        text (str): Text to analyze.
+
+    Returns:
+        SpacyDocument: Full structured document analysis.
+
+    Raises:
+        OSError: If spaCy or the Portuguese model is not installed.
+    """
+    analyzed_text = text
+    return SpacyDocument(
+        text=analyzed_text,
+        tokens=spacy_analyze(analyzed_text),
+        morphology=spacy_morphology(analyzed_text),
+        entities=spacy_entities(analyzed_text),
+        dependencies=spacy_dependencies(analyzed_text),
+        noun_chunks=spacy_noun_chunks(analyzed_text),
+        sentences=spacy_sentences(analyzed_text),
+    )

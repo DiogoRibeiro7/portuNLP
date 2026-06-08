@@ -1,6 +1,13 @@
 """Portuguese NLP helpers for Python."""
 
-from .api import CorpusAnalysis, TextAnalysis, analyze_text, analyze_texts
+from .api import (
+    CorpusAnalysis,
+    TextAnalysis,
+    analysis_to_dict,
+    analysis_to_json,
+    analyze_text,
+    analyze_texts,
+)
 from ._data import ORTHOGRAPHIC_RULES, PORTUGUESE_STOPWORDS, POS_TAG_MAP, SLANG_MAP
 from ._spacy import (
     SpacyCollocation,
@@ -113,6 +120,8 @@ __all__ = [
     "SpacySentence",
     "SpacySentences",
     "SpacyToken",
+    "analysis_to_dict",
+    "analysis_to_json",
     "analyze_text",
     "analyze_texts",
     "analyze_corpus",

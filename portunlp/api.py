@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
+import json
 from typing import Mapping
 
 from .text import (
@@ -62,6 +63,35 @@ class CorpusAnalysis:
     spacy_corpus: object | None
     spacy_lexicon: object | None
     spacy_collocations: object | None
+
+
+def _serialize_value(value: object) -> object:
+    """Convert analysis dataclasses into plain Python data.
+
+    Args:
+        value (object): Value to serialize.
+
+    Returns:
+        object: JSON-safe nested dictionaries, lists, and scalar values.
+    """
+    if is_dataclass(value) and not isinstance(value, type):
+        return {key: _serialize_value(item) for key, item in asdict(value).items()}
+    if isinstance(value, dict):
+        serialized_dict: dict[str, object] = {}
+        for key, item in value.items():
+            if isinstance(key, (str, int, float, bool)) or key is None:
+                normalized_key = str(key)
+            elif isinstance(key, tuple):
+                normalized_key = " ".join(str(part) for part in key)
+            else:
+                normalized_key = str(key)
+            serialized_dict[normalized_key] = _serialize_value(item)
+        return serialized_dict
+    if isinstance(value, list):
+        return [_serialize_value(item) for item in value]
+    if isinstance(value, tuple):
+        return [_serialize_value(item) for item in value]
+    return value
 
 
 def _ensure_texts(texts: list[str] | tuple[str, ...], *, name: str = "texts") -> list[str]:
@@ -266,3 +296,35 @@ def analyze_texts(
         spacy_lexicon=spacy_lexicon,
         spacy_collocations=spacy_collocations,
     )
+
+
+def analysis_to_dict(value: TextAnalysis | CorpusAnalysis) -> dict[str, object]:
+    """Convert a high-level analysis result into nested dictionaries and lists.
+
+    Args:
+        value (TextAnalysis | CorpusAnalysis): Analysis result to serialize.
+
+    Returns:
+        dict[str, object]: JSON-safe nested data.
+    """
+    serialized = _serialize_value(value)
+    if not isinstance(serialized, dict):
+        raise TypeError("Serialized analysis must produce a dictionary")
+    return serialized
+
+
+def analysis_to_json(
+    value: TextAnalysis | CorpusAnalysis,
+    *,
+    indent: int | None = 2,
+) -> str:
+    """Serialize a high-level analysis result into JSON.
+
+    Args:
+        value (TextAnalysis | CorpusAnalysis): Analysis result to serialize.
+        indent (int | None): Optional JSON indentation level.
+
+    Returns:
+        str: JSON serialization of the provided analysis result.
+    """
+    return json.dumps(analysis_to_dict(value), ensure_ascii=False, indent=indent)

@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import pytest
 
@@ -11,6 +12,8 @@ from portunlp import (
     SimilarityScore,
     TextAnalysis,
     TextStatistics,
+    analysis_to_dict,
+    analysis_to_json,
     analyze_text,
     analyze_text_metrics,
     analyze_texts,
@@ -345,6 +348,48 @@ def test_analyze_texts_can_include_spacy_sections(monkeypatch: pytest.MonkeyPatc
     assert result.spacy_corpus is corpus_summary
     assert result.spacy_lexicon is lexicon_summary
     assert result.spacy_collocations is collocation_summary
+
+
+def test_analysis_to_dict_serializes_text_analysis() -> None:
+    """High-level text analysis can be serialized into nested dictionaries."""
+    result = analyze_text("A casa bonita", remove_stopwords=True, keyword_top_k=2)
+    payload = analysis_to_dict(result)
+
+    assert payload["text"] == "A casa bonita"
+    assert isinstance(payload["processed"], dict)
+    assert isinstance(payload["metrics"], dict)
+    assert isinstance(payload["keywords"], list)
+
+
+def test_analysis_to_json_serializes_corpus_analysis() -> None:
+    """High-level corpus analysis can be serialized into JSON."""
+    result = analyze_texts(["A casa bonita", "A casa azul"], remove_stopwords=True)
+    payload = json.loads(analysis_to_json(result, indent=None))
+
+    assert payload["texts"] == ["A casa bonita", "A casa azul"]
+    assert payload["statistics"]["frequencies"] == {"casa": 2, "bonita": 1, "azul": 1}
+
+
+def test_analysis_to_dict_keeps_optional_spacy_sections(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Serialization preserves optional mocked spaCy sections."""
+    document_summary = spacy_module.SpacyDocument(
+        text="texto",
+        tokens=[],
+        morphology=spacy_module.SpacyMorphology(tokens=[], lemmas=[], pos_counts={}, morph_counts={}),
+        entities=spacy_module.SpacyEntities(entities=[], label_counts={}),
+        dependencies=spacy_module.SpacyDependencies(tokens=[], root="", dep_counts={}),
+        noun_chunks=spacy_module.SpacyNounChunks(chunks=[], root_counts={}),
+        sentences=spacy_module.SpacySentences(sentences=[], sentence_count=0),
+    )
+
+    monkeypatch.setattr(spacy_module, "spacy_document", lambda text: document_summary)
+
+    result = analyze_text("texto", include_spacy=True)
+    payload = analysis_to_dict(result)
+
+    spacy_payload = payload["spacy_document"]
+    assert isinstance(spacy_payload, dict)
+    assert spacy_payload["text"] == "texto"
 
 
 def test_normalize_accents_and_apply_orth_rules() -> None:

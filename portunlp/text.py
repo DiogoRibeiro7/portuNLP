@@ -61,30 +61,44 @@ def _candidate_cpp_module_paths() -> list[Path]:
     return [candidate for candidate in candidates if candidate.exists()]
 
 
+def _extra_dll_directories() -> list[Path]:
+    """Collect optional Windows DLL search directories.
+
+    The compiled extension may depend on runtime DLLs (for example a MinGW
+    runtime) that live outside the package directory. Locations can be supplied
+    via the ``PORTUNLP_DLL_DIRECTORIES`` environment variable using the
+    platform path separator.
+
+    Returns:
+        list[Path]: Existing directories to register before loading the backend.
+    """
+    raw = os.environ.get("PORTUNLP_DLL_DIRECTORIES", "")
+    directories = [Path(part) for part in raw.split(os.pathsep) if part.strip()]
+    return [directory for directory in directories if directory.exists()]
+
+
 def _load_cpp_backend():
     """Load the compiled C++ backend when available.
 
+    The backend is an optional acceleration layer. Any failure to import or
+    load it (missing module, ABI mismatch, missing runtime DLL) is treated as
+    "unavailable" so the package falls back to the pure-Python implementation
+    instead of failing to import.
+
     Returns:
-        object | None: The compiled backend module, if found.
+        object | None: The compiled backend module, or ``None`` if unavailable.
     """
     try:
         return import_module("portunlp._portunlp_cpp")
-    except ModuleNotFoundError:
-        pass
-    except ImportError:
+    except (ImportError, OSError):
         pass
 
-    strawberry_bin = Path("C:/Strawberry/c/bin")
-    last_error: Exception | None = None
+    extra_dll_directories = _extra_dll_directories() if os.name == "nt" else []
 
     for candidate in _candidate_cpp_module_paths():
         try:
             if os.name == "nt":
-                dll_directories = [candidate.parent]
-                if strawberry_bin.exists():
-                    dll_directories.append(strawberry_bin)
-
-                for directory in dll_directories:
+                for directory in [candidate.parent, *extra_dll_directories]:
                     os.add_dll_directory(str(directory))
 
             spec = importlib.util.spec_from_file_location("portunlp._portunlp_cpp", candidate)
@@ -93,13 +107,16 @@ def _load_cpp_backend():
 
             module = importlib.util.module_from_spec(spec)
             sys.modules["portunlp._portunlp_cpp"] = module
-            spec.loader.exec_module(module)
+            try:
+                spec.loader.exec_module(module)
+            except BaseException:
+                # Avoid leaving a half-initialized module behind on failure.
+                sys.modules.pop("portunlp._portunlp_cpp", None)
+                raise
             return module
-        except (ImportError, OSError) as exc:
-            last_error = exc
+        except (ImportError, OSError):
+            continue
 
-    if last_error is not None:
-        raise last_error
     return None
 
 

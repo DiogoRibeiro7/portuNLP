@@ -406,6 +406,15 @@ def test_text_helpers_validate_argument_types() -> None:
         map_slang("texto", custom_map={"vc": 1})  # type: ignore[dict-item]
 
 
-def test_cpp_backend_is_loaded_for_heavy_helpers() -> None:
-    """The compiled backend is available for token and corpus helpers."""
-    assert text_module._CPP_BACKEND is not None
+def test_cpp_backend_is_optional() -> None:
+    """The compiled backend is optional and either absent or a usable module."""
+    backend = text_module._CPP_BACKEND
+    if backend is None:
+        pytest.skip("compiled C++ backend not available in this environment")
+    # When present, it must expose the accelerated helpers used by text.py.
+    assert backend.split_words("um dois") == ["um", "dois"]
+    assert dict(backend.count_term_frequencies(["a", "a", "b"])) == {"a": 2, "b": 1}
+    assert [list(ngram) for ngram in backend.build_ngrams(["a", "b", "c"], 2)] == [
+        ["a", "b"],
+        ["b", "c"],
+    ]

@@ -1,34 +1,27 @@
-# History files
-.Rhistory
-.Rapp.history
-
-# Session Data files
-.RData
-
-# Example code in vignettes
-*-Ex.R
-
-# Output files from R CMD build
-/*.tar.gz
-
-# Output files from R CMD check
-/*.Rcheck/
-
-# RStudio files
-.Rproj.user/
-
-# pkgdown site
-/docs/
-inst/doc/
-
-# Temporary files
-*.Rproj
+# Byte-compiled / cached Python
 __pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Test, type-check, and lint caches
 .pytest_cache/
 .mypy_cache/
-dist/
+.ruff_cache/
 
+# Build artifacts
 build/
+dist/
+wheelhouse/
 Testing/
+*.so
+*.pyd
 
-src/symbols.rds
+# Virtual environments
+.venv/
+venv/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

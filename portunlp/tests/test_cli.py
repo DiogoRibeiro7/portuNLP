@@ -1,5 +1,7 @@
 import json
+import io
 from pathlib import Path
+import sys
 
 import pytest
 
@@ -99,3 +101,37 @@ def test_cli_rejects_missing_texts_input() -> None:
     """The texts subcommand rejects missing input sources."""
     with pytest.raises(ValueError, match="Provide exactly one of `texts` or `--input-file`"):
         main(["texts"])
+
+
+def test_cli_text_can_read_from_stdin(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    """The text subcommand can read a single text from stdin."""
+    monkeypatch.setattr(sys, "stdin", io.StringIO("A casa bonita"))
+
+    exit_code = main(["text", "--input-file", "-", "--compact"])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert payload["text"] == "A casa bonita"
+
+
+def test_cli_texts_can_read_from_stdin(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    """The texts subcommand can read one text per line from stdin."""
+    monkeypatch.setattr(sys, "stdin", io.StringIO("A casa bonita\nA casa azul\n"))
+
+    exit_code = main(["texts", "--input-file", "-", "--remove-stopwords", "--compact"])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert payload["texts"] == ["A casa bonita", "A casa azul"]
+
+
+def test_cli_output_dash_writes_to_stdout(capsys) -> None:
+    """Using `-` as the output file keeps output on stdout."""
+    exit_code = main(["text", "A casa bonita", "--compact", "--output-file", "-"])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 0
+    assert payload["text"] == "A casa bonita"

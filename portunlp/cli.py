@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 from typing import Sequence
 
 from .api import analysis_to_json, analyze_text, analyze_texts
@@ -57,6 +58,8 @@ def _resolve_text_input(text: str | None, input_file: str | None) -> str:
     if bool(text) == bool(input_file):
         raise ValueError("Provide exactly one of `text` or `--input-file`")
     if input_file is not None:
+        if input_file == "-":
+            return sys.stdin.read()
         return Path(input_file).read_text(encoding="utf-8")
     return text or ""
 
@@ -77,7 +80,10 @@ def _resolve_texts_input(texts: list[str], input_file: str | None) -> list[str]:
     if bool(texts) == bool(input_file):
         raise ValueError("Provide exactly one of `texts` or `--input-file`")
     if input_file is not None:
-        lines = Path(input_file).read_text(encoding="utf-8").splitlines()
+        if input_file == "-":
+            lines = sys.stdin.read().splitlines()
+        else:
+            lines = Path(input_file).read_text(encoding="utf-8").splitlines()
         return [line for line in lines if line.strip()]
     return texts
 
@@ -89,7 +95,7 @@ def _emit_output(payload: str, output_file: str | None) -> None:
         payload (str): Serialized JSON payload.
         output_file (str | None): Optional output file path.
     """
-    if output_file is not None:
+    if output_file is not None and output_file != "-":
         Path(output_file).write_text(payload + "\n", encoding="utf-8")
         return
     print(payload)
@@ -106,7 +112,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     text_parser = subparsers.add_parser("text", help="Analyze a single text.")
     text_parser.add_argument("text", nargs="?", help="Text to analyze.")
-    text_parser.add_argument("--input-file", help="Read the text to analyze from a UTF-8 file.")
+    text_parser.add_argument("--input-file", help="Read the text to analyze from a UTF-8 file or `-` for stdin.")
     text_parser.add_argument("--keyword-top-k", type=int, default=10, help="Maximum number of keywords to return.")
     _add_common_arguments(text_parser)
 
@@ -114,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     texts_parser.add_argument("texts", nargs="*", help="Texts to analyze.")
     texts_parser.add_argument(
         "--input-file",
-        help="Read texts from a UTF-8 file with one text per line.",
+        help="Read texts from a UTF-8 file with one text per line or `-` for stdin.",
     )
     texts_parser.add_argument("--ngram-size", type=int, default=2, help="N-gram size for aggregate statistics.")
     _add_common_arguments(texts_parser)

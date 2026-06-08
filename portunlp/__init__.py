@@ -1,5 +1,7 @@
 """Portuguese NLP helpers for Python."""
 
+__version__ = "1.0.0"
+
 from .api import (
     CorpusAnalysis,
     TextAnalysis,
@@ -60,18 +62,15 @@ from .text import (
     TextStatistics,
     analyze_text_metrics,
     analyze_corpus,
-    apply_orth_rules,
     apply_orthographic_rules,
-    clean_social,
+    clean_social_text,
     compare_texts,
     compute_inverse_document_frequency,
-    clean_social_text,
     extract_keywords,
     filter_stopwords,
     generate_ngrams,
     get_stopwords,
     lemmatize_pt,
-    load_dict,
     load_dictionary,
     map_pos_tags,
     map_slang,
@@ -82,7 +81,6 @@ from .text import (
     rank_similar_texts,
     remove_emoji,
     term_frequencies,
-    tokenize_pt,
     tokenize_spacy_pt,
     tokenize_text,
 )
@@ -126,9 +124,7 @@ __all__ = [
     "analyze_texts",
     "analyze_corpus",
     "analyze_text_metrics",
-    "apply_orth_rules",
     "apply_orthographic_rules",
-    "clean_social",
     "clean_social_text",
     "compare_texts",
     "compute_inverse_document_frequency",
@@ -137,7 +133,6 @@ __all__ = [
     "generate_ngrams",
     "get_stopwords",
     "lemmatize_pt",
-    "load_dict",
     "load_dictionary",
     "map_pos_tags",
     "map_slang",
@@ -168,7 +163,6 @@ __all__ = [
     "spacy_to_json",
     "spacy_tokenize",
     "term_frequencies",
-    "tokenize_pt",
     "tokenize_spacy_pt",
     "tokenize_text",
 ]

@@ -39,8 +39,15 @@ The current scope is:
    - Add CI focused on Python tests, typing, and wheel builds.
    - Publish a cleaner API reference and usage examples.
 
+## Resolved Decisions
+
+- **API stability (1.0.0):** the public API is frozen and documented in
+  `API.md` under a semantic-versioning policy.
+- **Compatibility aliases:** removed in 1.0.0. The canonical descriptive names
+  (`tokenize_text`, `load_dictionary`, `clean_social_text`,
+  `apply_orthographic_rules`) are the supported API.
+
 ## Open Decisions
 
-- Whether to expose the C++ tokenizer directly in Python.
-- Whether to keep compatibility aliases such as `tokenize_pt()` long term.
+- Whether to expose the C++ tokenizer directly in Python as a supported helper.
 - Whether bundled resources should remain in code or move to dedicated data files.

@@ -44,6 +44,11 @@ poetry run portunlp text "A casa bonita" --remove-stopwords
 poetry run portunlp texts "A casa bonita" "A casa azul" --remove-stopwords --compact
 ```
 
+## API reference & stability
+
+The complete public API and its semantic-versioning policy are documented in
+[`API.md`](API.md). As of 1.0.0 the public surface is stable; anything prefixed
+with `_` is internal and may change without notice.
 
 ## Development
 

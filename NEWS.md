@@ -1,5 +1,41 @@
 # portuNLP News
 
+## 1.0.0
+
+First stable release. The public API is now frozen and documented in
+[`API.md`](API.md); see that file for the semantic-versioning policy.
+
+### Breaking changes
+* Removed the legacy duplicate aliases in favor of the canonical, descriptive
+  names:
+  * `tokenize_pt()` → `tokenize_text()`
+  * `load_dict()` → `load_dictionary()`
+  * `clean_social()` → `clean_social_text()`
+  * `apply_orth_rules()` → `apply_orthographic_rules()`
+
+### Added
+* `portunlp.__version__`.
+* `API.md` public API reference and stability policy.
+* GitHub Actions CI (pytest + mypy matrix, pre-commit lint).
+* `PORTUNLP_DLL_DIRECTORIES` environment variable to supply extra Windows DLL
+  search directories for the optional C++ backend.
+
+### Fixed
+* The optional C++ backend now degrades gracefully to the pure-Python path when
+  it is missing or ABI-incompatible, instead of breaking `import portunlp`.
+
+### Changed
+* Removed the hardcoded `C:/Strawberry/c/bin` path from the backend loader.
+* Refreshed `AGENTS.md`, `.gitignore`, and project metadata for the
+  Python + C++ layout (dropped leftover R references).
+
+---
+
+## 0.0.0.9000 (historical, pre-1.0 R-era notes)
+
+The notes below describe the original R package and the early Python migration.
+They are retained for provenance only and do not reflect the current API.
+
 ## 0.0.0.9000
 
 * Removed the legacy R package implementation and its generated assets.

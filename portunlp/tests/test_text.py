@@ -18,15 +18,15 @@ from portunlp import (
     analyze_text_metrics,
     analyze_texts,
     analyze_corpus,
-    apply_orth_rules,
-    clean_social,
+    apply_orthographic_rules,
+    clean_social_text,
     compare_texts,
     compute_inverse_document_frequency,
     extract_keywords,
     filter_stopwords,
     generate_ngrams,
     get_stopwords,
-    load_dict,
+    load_dictionary,
     map_pos_tags,
     map_slang,
     normalize_accents,
@@ -35,7 +35,6 @@ from portunlp import (
     rank_similar_texts,
     remove_emoji,
     term_frequencies,
-    tokenize_pt,
     tokenize_text,
 )
 from portunlp import text as text_module
@@ -52,7 +51,7 @@ def test_tokenize_text_supports_word_and_sentence_modes() -> None:
     """Native tokenization handles words and sentences."""
     assert tokenize_text("Olá, mundo! Tudo bem?") == ["olá", "mundo", "tudo", "bem"]
     assert tokenize_text("Olá. Tudo bem?", kind="sentence") == ["Olá.", "Tudo bem?"]
-    assert tokenize_pt("Olá, mundo!") == ["olá", "mundo"]
+    assert tokenize_text("Olá, mundo!") == ["olá", "mundo"]
 
 
 def test_remove_emoji_and_map_slang() -> None:
@@ -64,7 +63,7 @@ def test_remove_emoji_and_map_slang() -> None:
 
 def test_clean_social_combines_social_transformations() -> None:
     """The social cleaning pipeline applies all enabled transformations."""
-    result = clean_social("vc tá 😊", custom_map={"tá": "está"})
+    result = clean_social_text("vc tá 😊", custom_map={"tá": "está"})
     assert result == "voce esta "
 
 
@@ -99,13 +98,13 @@ def test_load_dict_reads_non_empty_lines(tmp_path: Path) -> None:
     dictionary_path = tmp_path / "sample_dict.txt"
     dictionary_path.write_text(" ola\n\nmundo \n", encoding="utf-8")
 
-    assert load_dict(dictionary_path) == ["ola", "mundo"]
+    assert load_dictionary(dictionary_path) == ["ola", "mundo"]
 
 
 def test_load_dict_errors_for_missing_file(tmp_path: Path) -> None:
     """Missing dictionary files raise a clear error."""
     with pytest.raises(FileNotFoundError, match="File not found"):
-        load_dict(tmp_path / "missing.txt")
+        load_dictionary(tmp_path / "missing.txt")
 
 
 def test_map_pos_tags_preserves_unknown_values() -> None:
@@ -395,7 +394,7 @@ def test_analysis_to_dict_keeps_optional_spacy_sections(monkeypatch: pytest.Monk
 def test_normalize_accents_and_apply_orth_rules() -> None:
     """Accent folding and orthographic replacements work independently."""
     assert normalize_accents("ação") == "acao"
-    assert apply_orth_rules("acto electrico") == "ato elétrico"
+    assert apply_orthographic_rules("acto electrico") == "ato elétrico"
 
 
 def test_text_helpers_validate_argument_types() -> None:

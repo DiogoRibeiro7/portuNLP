@@ -461,19 +461,6 @@ def tokenize_text(text: str, *, kind: Literal["word", "sentence"] = "word") -> l
     raise ValueError("`kind` must be either 'word' or 'sentence'")
 
 
-def tokenize_pt(text: str, type: Literal["word", "sentence"] = "word") -> list[str]:
-    """Tokenize Portuguese text using the legacy package API.
-
-    Args:
-        text (str): Input text.
-        type (Literal["word", "sentence"]): Tokenization mode.
-
-    Returns:
-        list[str]: Extracted tokens or sentences.
-    """
-    return tokenize_text(text, kind=type)
-
-
 def load_dictionary(path: str | Path) -> list[str]:
     """Load a newline-delimited dictionary file.
 
@@ -492,18 +479,6 @@ def load_dictionary(path: str | Path) -> list[str]:
 
     lines = dictionary_path.read_text(encoding="utf-8").splitlines()
     return [line.strip() for line in lines if line.strip()]
-
-
-def load_dict(path: str | Path) -> list[str]:
-    """Load a newline-delimited dictionary file using the legacy API.
-
-    Args:
-        path (str | Path): Path to a text file with one entry per line.
-
-    Returns:
-        list[str]: Cleaned dictionary terms.
-    """
-    return load_dictionary(path)
 
 
 def map_slang(text: str, custom_map: Mapping[str, str] | None = None) -> str:
@@ -557,35 +532,6 @@ def clean_social_text(
     if accents:
         result = normalize_accents(result)
     return result
-
-
-def clean_social(
-    text: str,
-    *,
-    emoji: bool = True,
-    accents: bool = True,
-    slang: bool = True,
-    custom_map: Mapping[str, str] | None = None,
-) -> str:
-    """Clean Portuguese social-media text using the legacy API.
-
-    Args:
-        text (str): Input text.
-        emoji (bool): Whether to remove emoji.
-        accents (bool): Whether to fold accents to ASCII.
-        slang (bool): Whether to replace slang terms.
-        custom_map (Mapping[str, str] | None): Optional slang overrides.
-
-    Returns:
-        str: Cleaned text.
-    """
-    return clean_social_text(
-        text,
-        emoji=emoji,
-        accents=accents,
-        slang=slang,
-        custom_map=custom_map,
-    )
 
 
 def get_stopwords(
@@ -1252,6 +1198,3 @@ def tokenize_spacy_pt(text: str) -> list[str]:
     from ._spacy import spacy_tokenize
 
     return spacy_tokenize(text)
-
-
-apply_orth_rules = apply_orthographic_rules

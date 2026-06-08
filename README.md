@@ -23,26 +23,27 @@ poetry run python -m spacy download pt_core_news_sm
 ## Usage
 
 ```python
-from portunlp import (
-    clean_social,
-    get_stopwords,
-    normalize_text,
-    spacy_lemmatize,
-    spacy_pos_tag,
-    spacy_tokenize,
-    tokenize_text,
+from portunlp import analyze_text, analyze_texts
+
+text_result = analyze_text(
+    "Os gatos bonitos comem peixe.",
+    remove_stopwords=True,
+    keyword_top_k=5,
 )
 
-text = "Os gatos bonitos comem peixe."
-
-normalized = normalize_text("Acção", correct=True)
-simple_tokens = tokenize_text("Olá, mundo! Tudo bem?")
-tokens = spacy_tokenize(text)
-lemmas = spacy_lemmatize(text)
-tags = spacy_pos_tag(text)
-social = clean_social("vc tá 😊", custom_map={"tá": "está"})
-stopwords = get_stopwords(extra={"novapalavra"})
+corpus_result = analyze_texts(
+    ["A casa bonita", "A casa azul"],
+    remove_stopwords=True,
+)
 ```
+
+You can also use the CLI:
+
+```bash
+poetry run portunlp text "A casa bonita" --remove-stopwords
+poetry run portunlp texts "A casa bonita" "A casa azul" --remove-stopwords --compact
+```
+
 
 ## Development
 

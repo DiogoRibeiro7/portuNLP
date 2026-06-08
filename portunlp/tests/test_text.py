@@ -3,13 +3,17 @@ from pathlib import Path
 import pytest
 
 from portunlp import (
+    CorpusAnalysis,
     CorpusStatistics,
     KeywordScore,
     PORTUGUESE_STOPWORDS,
     ProcessedText,
     SimilarityScore,
+    TextAnalysis,
     TextStatistics,
+    analyze_text,
     analyze_text_metrics,
+    analyze_texts,
     analyze_corpus,
     apply_orth_rules,
     clean_social,
@@ -32,6 +36,7 @@ from portunlp import (
     tokenize_text,
 )
 from portunlp import text as text_module
+from portunlp import _spacy as spacy_module
 
 
 def test_normalize_text_applies_expected_steps() -> None:
@@ -236,6 +241,110 @@ def test_analyze_text_metrics_handles_empty_text() -> None:
         average_syllables_per_word=0.0,
         flesch_reading_ease=0.0,
     )
+
+
+def test_analyze_text_returns_composed_result() -> None:
+    """High-level text analysis composes preprocessing, metrics, and keywords."""
+    result = analyze_text("A casa bonita", remove_stopwords=True, keyword_top_k=2)
+
+    assert isinstance(result, TextAnalysis)
+    assert result.text == "A casa bonita"
+    assert result.processed.filtered_tokens == ["casa", "bonita"]
+    assert result.metrics.token_count == 2
+    assert len(result.keywords) <= 2
+    assert result.spacy_document is None
+    assert result.spacy_lexicon is None
+    assert result.spacy_collocations is None
+
+
+def test_analyze_texts_returns_composed_corpus_result() -> None:
+    """High-level corpus analysis composes preprocessing and aggregate stats."""
+    result = analyze_texts(["A casa bonita", "A casa azul"], remove_stopwords=True)
+
+    assert isinstance(result, CorpusAnalysis)
+    assert result.texts == ["A casa bonita", "A casa azul"]
+    assert len(result.processed_documents) == 2
+    assert result.statistics.frequencies == {"casa": 2, "bonita": 1, "azul": 1}
+    assert result.idf_values["bonita"] > result.idf_values["casa"]
+    assert result.spacy_corpus is None
+    assert result.spacy_lexicon is None
+    assert result.spacy_collocations is None
+
+
+def test_analyze_text_can_include_spacy_sections(monkeypatch: pytest.MonkeyPatch) -> None:
+    """High-level text analysis can include optional spaCy summaries."""
+    document_summary = spacy_module.SpacyDocument(
+        text="texto",
+        tokens=[],
+        morphology=spacy_module.SpacyMorphology(tokens=[], lemmas=[], pos_counts={}, morph_counts={}),
+        entities=spacy_module.SpacyEntities(entities=[], label_counts={}),
+        dependencies=spacy_module.SpacyDependencies(tokens=[], root="", dep_counts={}),
+        noun_chunks=spacy_module.SpacyNounChunks(chunks=[], root_counts={}),
+        sentences=spacy_module.SpacySentences(sentences=[], sentence_count=0),
+    )
+    lexicon_summary = spacy_module.SpacyLexicon(
+        token_frequencies={"texto": 1},
+        lemma_frequencies={"texto": 1},
+        lemmas_by_pos={"NOUN": {"texto": 1}},
+    )
+    collocation_summary = spacy_module.SpacyCollocations(
+        n=2,
+        collocations=[spacy_module.SpacyCollocation(terms=["texto", "bom"], count=1)],
+    )
+
+    monkeypatch.setattr(spacy_module, "spacy_document", lambda text: document_summary)
+    monkeypatch.setattr(spacy_module, "spacy_lexicon", lambda text: lexicon_summary)
+    monkeypatch.setattr(spacy_module, "spacy_collocations", lambda text, n=2: collocation_summary)
+
+    result = analyze_text(
+        "texto",
+        include_spacy=True,
+        include_spacy_lexicon=True,
+        include_spacy_collocations=True,
+    )
+
+    assert result.spacy_document is document_summary
+    assert result.spacy_lexicon is lexicon_summary
+    assert result.spacy_collocations is collocation_summary
+
+
+def test_analyze_texts_can_include_spacy_sections(monkeypatch: pytest.MonkeyPatch) -> None:
+    """High-level corpus analysis can include optional spaCy summaries."""
+    corpus_summary = spacy_module.SpacyCorpus(
+        documents=[],
+        document_count=2,
+        token_count=3,
+        pos_counts={"NOUN": 3},
+        entity_label_counts={},
+        dependency_counts={},
+        noun_chunk_root_counts={},
+    )
+    lexicon_summary = spacy_module.SpacyLexiconCorpus(
+        document_count=2,
+        token_frequencies={"casa": 2},
+        lemma_frequencies={"casa": 2},
+        lemmas_by_pos={"NOUN": {"casa": 2}},
+    )
+    collocation_summary = spacy_module.SpacyCollocationCorpus(
+        document_count=2,
+        n=2,
+        collocations=[spacy_module.SpacyCollocation(terms=["casa", "bonita"], count=1)],
+    )
+
+    monkeypatch.setattr(spacy_module, "spacy_corpus", lambda texts: corpus_summary)
+    monkeypatch.setattr(spacy_module, "spacy_lexicon_corpus", lambda texts: lexicon_summary)
+    monkeypatch.setattr(spacy_module, "spacy_collocations_corpus", lambda texts, n=2: collocation_summary)
+
+    result = analyze_texts(
+        ["A casa bonita", "A casa azul"],
+        include_spacy=True,
+        include_spacy_lexicon=True,
+        include_spacy_collocations=True,
+    )
+
+    assert result.spacy_corpus is corpus_summary
+    assert result.spacy_lexicon is lexicon_summary
+    assert result.spacy_collocations is collocation_summary
 
 
 def test_normalize_accents_and_apply_orth_rules() -> None:

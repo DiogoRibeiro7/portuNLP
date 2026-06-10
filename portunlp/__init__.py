@@ -1,6 +1,6 @@
 """Portuguese NLP helpers for Python."""
 
-__version__ = "1.7.0"
+__version__ = "1.8.0"
 
 from .api import (
     CorpusAnalysis,
@@ -85,6 +85,8 @@ from .text import (
     get_stopwords,
     lemmatize_pt,
     load_dictionary,
+    load_oplexicon,
+    load_sentilex,
     map_pos_tags,
     map_slang,
     normalize_accents,
@@ -158,6 +160,8 @@ __all__ = [
     "get_stopwords",
     "lemmatize_pt",
     "load_dictionary",
+    "load_oplexicon",
+    "load_sentilex",
     "map_pos_tags",
     "map_slang",
     "normalize_accents",

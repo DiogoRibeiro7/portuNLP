@@ -1,5 +1,17 @@
 # portuNLP News
 
+## 1.8.0
+
+Support external, corpus-based sentiment lexicons.
+
+### Added
+* `analyze_sentiment()` now accepts custom `lexicon`, `negations`, and
+  `intensifiers` arguments, so the bundled lexicon can be swapped for a
+  larger resource.
+* `load_sentilex()` and `load_oplexicon()` parse the standard SentiLex-PT and
+  OpLexicon files into polarity mappings usable as the `lexicon` argument.
+  These resources are licensed separately and are not bundled.
+
 ## 1.7.0
 
 Wire stemming into the analysis pipeline.

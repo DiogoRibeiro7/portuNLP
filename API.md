@@ -98,7 +98,13 @@ Lexicon-based polarity with negation and intensifier handling
 
 | Name | Summary |
 |------|---------|
-| `analyze_sentiment(text, *, negation_window=3) -> SentimentScore` | Estimate polarity (`-1.0`–`1.0`) and a `positive`/`negative`/`neutral` label. |
+| `analyze_sentiment(text, *, lexicon=None, negations=None, intensifiers=None, negation_window=3) -> SentimentScore` | Estimate polarity (`-1.0`–`1.0`) and a `positive`/`negative`/`neutral` label. |
+| `load_sentilex(path, *, encoding="utf-8") -> dict[str, float]` | Parse a SentiLex-PT file into a polarity lexicon. |
+| `load_oplexicon(path, *, encoding="utf-8") -> dict[str, float]` | Parse an OpLexicon CSV into a polarity lexicon. |
+
+The bundled lexicon is compact and hand-curated. For production, pass a
+corpus-based lexicon (SentiLex-PT or OpLexicon, loaded with the functions above —
+both licensed separately and not bundled) via `analyze_sentiment(..., lexicon=...)`.
 
 ### Preprocessing, statistics & similarity
 | Name | Summary |

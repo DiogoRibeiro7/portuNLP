@@ -45,6 +45,7 @@ _EMOJI_PATTERN = re.compile(
     flags=re.UNICODE,
 )
 _WORD_BOUNDARY_TEMPLATE = r"(?<!\w){term}(?!\w)"
+_SENTILEX_POLARITY = re.compile(r"POL:N[01]=(-?\d+)")
 
 
 def _candidate_cpp_module_paths() -> list[Path]:
@@ -831,17 +832,124 @@ _SENTIMENT_LEXICON_FOLDED = {_fold(word): score for word, score in PORTUGUESE_SE
 _SENTIMENT_NEGATIONS_FOLDED = frozenset(_fold(word) for word in SENTIMENT_NEGATIONS)
 _SENTIMENT_INTENSIFIERS_FOLDED = {_fold(word): factor for word, factor in SENTIMENT_INTENSIFIERS.items()}
 
+# Cache of accent-folded views of user-supplied lexicons, keyed by object
+# identity so a large external lexicon is only folded once per object.
+_FOLDED_LEXICON_CACHE: dict[int, tuple[Mapping[str, float], dict[str, float]]] = {}
 
-def analyze_sentiment(text: str, *, negation_window: int = 3) -> SentimentScore:
+
+def _folded_lexicon(lexicon: Mapping[str, float] | None) -> dict[str, float]:
+    """Return an accent-folded view of a polarity lexicon.
+
+    Args:
+        lexicon (Mapping[str, float] | None): Custom lexicon, or None for the
+            bundled default.
+
+    Returns:
+        dict[str, float]: Accent-folded word-to-polarity mapping.
+    """
+    if lexicon is None:
+        return _SENTIMENT_LEXICON_FOLDED
+    cached = _FOLDED_LEXICON_CACHE.get(id(lexicon))
+    if cached is not None and cached[0] is lexicon:
+        return cached[1]
+    folded = {_fold(word): float(score) for word, score in lexicon.items()}
+    _FOLDED_LEXICON_CACHE[id(lexicon)] = (lexicon, folded)
+    return folded
+
+
+def load_sentilex(path: str | Path, *, encoding: str = "utf-8") -> dict[str, float]:
+    """Load a SentiLex-PT lexicon file into a polarity mapping.
+
+    Parses either the lemma (``SentiLex-lem-*.txt``) or inflected
+    (``SentiLex-flex-*.txt``) form files, reading the ``POL:N0``/``POL:N1``
+    polarity field. Neutral (zero-polarity) entries are skipped. The result can
+    be passed to :func:`analyze_sentiment` via its ``lexicon`` argument.
+
+    SentiLex-PT is distributed separately; this loader does not bundle it.
+
+    Args:
+        path (str | Path): Path to a SentiLex-PT data file.
+        encoding (str): File encoding.
+
+    Returns:
+        dict[str, float]: Word-to-polarity mapping.
+    """
+    lexicon: dict[str, float] = {}
+    for line in Path(path).read_text(encoding=encoding).splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        head, separator, attributes = stripped.partition(".")
+        if not separator:
+            continue
+        word = head.split(",", 1)[0].strip().lower()
+        match = _SENTILEX_POLARITY.search(attributes)
+        if not word or match is None:
+            continue
+        polarity = float(match.group(1))
+        if polarity != 0.0:
+            lexicon[word] = polarity
+    return lexicon
+
+
+def load_oplexicon(path: str | Path, *, encoding: str = "utf-8") -> dict[str, float]:
+    """Load an OpLexicon CSV file into a polarity mapping.
+
+    Reads comma-separated ``word,pos,polarity[,annotation]`` rows (OpLexicon
+    v2.1/v3.0). Neutral (zero-polarity) entries are skipped. The result can be
+    passed to :func:`analyze_sentiment` via its ``lexicon`` argument.
+
+    OpLexicon is distributed separately; this loader does not bundle it.
+
+    Args:
+        path (str | Path): Path to an OpLexicon CSV file.
+        encoding (str): File encoding.
+
+    Returns:
+        dict[str, float]: Word-to-polarity mapping.
+    """
+    lexicon: dict[str, float] = {}
+    for line in Path(path).read_text(encoding=encoding).splitlines():
+        fields = line.strip().split(",")
+        if len(fields) < 3:
+            continue
+        word = fields[0].strip().lower()
+        try:
+            polarity = float(fields[2])
+        except ValueError:
+            continue
+        if word and polarity != 0.0:
+            lexicon[word] = polarity
+    return lexicon
+
+
+def analyze_sentiment(
+    text: str,
+    *,
+    lexicon: Mapping[str, float] | None = None,
+    negations: list[str] | tuple[str, ...] | set[str] | None = None,
+    intensifiers: Mapping[str, float] | None = None,
+    negation_window: int = 3,
+) -> SentimentScore:
     """Estimate sentiment polarity with a lexicon-based approach.
 
-    Tokens are matched against a bundled polarity lexicon. A preceding
-    intensifier (for example "muito") scales the next sentiment word, and a
-    preceding negation (for example "não") inverts the polarity of the next
-    ``negation_window`` sentiment words. Matching is accent-insensitive.
+    Tokens are matched against a polarity lexicon. A preceding intensifier (for
+    example "muito") scales the next sentiment word, and a preceding negation
+    (for example "não") inverts the polarity of the next ``negation_window``
+    sentiment words. Matching is accent-insensitive.
+
+    By default the bundled :data:`PORTUGUESE_SENTIMENT_LEXICON` is used. For
+    broader, corpus-based coverage, pass a lexicon loaded with
+    :func:`load_sentilex` or :func:`load_oplexicon` (or any custom mapping).
 
     Args:
         text (str): Input text.
+        lexicon (Mapping[str, float] | None): Custom word-to-polarity mapping;
+            defaults to the bundled lexicon.
+        negations (list[str] | tuple[str, ...] | set[str] | None): Custom
+            negation words; defaults to the bundled set.
+        intensifiers (Mapping[str, float] | None): Custom intensifier-to-factor
+            mapping; defaults to the bundled set.
         negation_window (int): Number of following words a negation affects.
 
     Returns:
@@ -852,6 +960,18 @@ def analyze_sentiment(text: str, *, negation_window: int = 3) -> SentimentScore:
     """
     if negation_window < 0:
         raise ValueError("`negation_window` must be non-negative")
+
+    folded_lexicon = _folded_lexicon(lexicon)
+    folded_negations = (
+        _SENTIMENT_NEGATIONS_FOLDED
+        if negations is None
+        else frozenset(_fold(word) for word in negations)
+    )
+    folded_intensifiers = (
+        _SENTIMENT_INTENSIFIERS_FOLDED
+        if intensifiers is None
+        else {_fold(word): float(factor) for word, factor in intensifiers.items()}
+    )
 
     tokens = tokenize_text(_ensure_text(text))
 
@@ -865,17 +985,17 @@ def analyze_sentiment(text: str, *, negation_window: int = 3) -> SentimentScore:
     for token in tokens:
         folded = _fold(token)
 
-        if folded in _SENTIMENT_NEGATIONS_FOLDED:
+        if folded in folded_negations:
             negation_remaining = negation_window
             multiplier = 1.0
             continue
 
-        if folded in _SENTIMENT_INTENSIFIERS_FOLDED:
-            multiplier *= _SENTIMENT_INTENSIFIERS_FOLDED[folded]
+        if folded in folded_intensifiers:
+            multiplier *= folded_intensifiers[folded]
             continue
 
-        if folded in _SENTIMENT_LEXICON_FOLDED:
-            score = _SENTIMENT_LEXICON_FOLDED[folded] * multiplier
+        if folded in folded_lexicon:
+            score = folded_lexicon[folded] * multiplier
             if negation_remaining > 0:
                 score = -score
                 negation_remaining -= 1

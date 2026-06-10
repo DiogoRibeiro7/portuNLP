@@ -19,6 +19,8 @@ from portunlp import (
     analyze_text_metrics,
     analyze_texts,
     analyze_corpus,
+    load_oplexicon,
+    load_sentilex,
     apply_orthographic_rules,
     clean_social_text,
     compare_texts,
@@ -180,6 +182,41 @@ def test_analyze_sentiment_validates_window() -> None:
     """A negative negation window is rejected."""
     with pytest.raises(ValueError, match="`negation_window` must be non-negative"):
         analyze_sentiment("texto", negation_window=-1)
+
+
+def test_load_sentilex_parses_lem_and_flex(tmp_path: Path) -> None:
+    """SentiLex lem/flex lines parse and neutral entries are skipped."""
+    path = tmp_path / "sentilex.txt"
+    path.write_text(
+        "bom.PoS=Adj;TG=HUM:N0;POL:N0=1;ANOT=MAN\n"
+        "indiferente.PoS=Adj;POL:N0=0;ANOT=MAN\n"
+        "otima,otimo.PoS=Adj;FLEX=fs;POL:N0=1;ANOT=MAN\n"
+        "desastres,desastre.PoS=N;POL:N0=-1;ANOT=MAN\n",
+        encoding="utf-8",
+    )
+    lexicon = load_sentilex(path)
+    assert lexicon == {"bom": 1.0, "otima": 1.0, "desastres": -1.0}
+    assert "indiferente" not in lexicon
+
+
+def test_load_oplexicon_parses_csv(tmp_path: Path) -> None:
+    """OpLexicon CSV rows parse and neutral entries are skipped."""
+    path = tmp_path / "oplexicon.txt"
+    path.write_text(
+        "excelente,adj,1,manual\npessimo,adj,-1,manual\nmesa,n,0,auto\n",
+        encoding="utf-8",
+    )
+    lexicon = load_oplexicon(path)
+    assert lexicon == {"excelente": 1.0, "pessimo": -1.0}
+
+
+def test_analyze_sentiment_accepts_custom_lexicon() -> None:
+    """A supplied lexicon overrides the bundled default."""
+    custom = {"fixe": 1.0, "xunga": -1.0}
+    assert analyze_sentiment("Isto é fixe", lexicon=custom).label == "positive"
+    assert analyze_sentiment("Isto é xunga", lexicon=custom).label == "negative"
+    # A word only in the bundled lexicon is not scored by the custom one.
+    assert analyze_sentiment("Isto é excelente", lexicon=custom).label == "neutral"
 
 
 def test_convert_variant_both_directions() -> None:

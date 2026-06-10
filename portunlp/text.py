@@ -22,6 +22,7 @@ from ._data import (
     POS_TAG_MAP,
     SLANG_MAP,
 )
+from ._stemmer import snowball_stem
 
 _EMOJI_PATTERN = re.compile(
     "["
@@ -690,6 +691,47 @@ def map_pos_tags(tags: list[str] | tuple[str, ...]) -> list[str]:
     """
     normalized_tags = _normalize_iterable(tags, name="tags")
     return [POS_TAG_MAP.get(tag, tag) for tag in normalized_tags]
+
+
+def stem_word(word: str) -> str:
+    """Stem a single Portuguese word with the Snowball algorithm.
+
+    The stemmer is accent-aware, so pass words with their original accents
+    (for example from :func:`tokenize_text`, not the accent-folded
+    :func:`normalize_text`).
+
+    Args:
+        word (str): Input word.
+
+    Returns:
+        str: The stemmed form.
+    """
+    return snowball_stem(_ensure_text(word, name="word"))
+
+
+def stem_tokens(tokens: list[str] | tuple[str, ...]) -> list[str]:
+    """Stem a sequence of tokens with the Snowball algorithm.
+
+    Args:
+        tokens (list[str] | tuple[str, ...]): Tokens to stem.
+
+    Returns:
+        list[str]: Stemmed tokens.
+    """
+    normalized_tokens = _normalize_iterable(tokens, name="tokens")
+    return [snowball_stem(token) for token in normalized_tokens]
+
+
+def stem_text(text: str) -> list[str]:
+    """Tokenize Portuguese text and stem each token.
+
+    Args:
+        text (str): Input text.
+
+    Returns:
+        list[str]: Stemmed tokens, in order.
+    """
+    return [snowball_stem(token) for token in tokenize_text(_ensure_text(text))]
 
 
 def preprocess_text(

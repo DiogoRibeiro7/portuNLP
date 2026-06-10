@@ -1,6 +1,6 @@
 """Portuguese NLP helpers for Python."""
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 from .api import (
     CorpusAnalysis,
@@ -88,6 +88,9 @@ from .text import (
     preprocess_text,
     rank_similar_texts,
     remove_emoji,
+    stem_text,
+    stem_tokens,
+    stem_word,
     term_frequencies,
     tokenize_spacy_pt,
     tokenize_text,
@@ -153,6 +156,9 @@ __all__ = [
     "preprocess_text",
     "rank_similar_texts",
     "remove_emoji",
+    "stem_text",
+    "stem_tokens",
+    "stem_word",
     "spacy_analyze",
     "spacy_collocations",
     "spacy_collocations_corpus",

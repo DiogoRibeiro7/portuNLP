@@ -73,6 +73,18 @@ print(analysis_to_json(result))
 | `map_pos_tags(tags) -> list[str]` | Map spaCy POS tags through the bundled tagset. |
 | `cpp_acceleration_available() -> bool` | Whether the optional compiled backend is loaded. |
 
+### Stemming
+
+Native Snowball (Porter2) Portuguese stemmer; output matches NLTK's
+`SnowballStemmer("portuguese")`. Pass accented tokens (e.g. from
+`tokenize_text`), not the accent-folded `normalize_text` output.
+
+| Name | Summary |
+|------|---------|
+| `stem_word(word) -> str` | Stem a single word. |
+| `stem_tokens(tokens) -> list[str]` | Stem a token sequence. |
+| `stem_text(text) -> list[str]` | Tokenize then stem each token. |
+
 ### Preprocessing, statistics & similarity
 | Name | Summary |
 |------|---------|

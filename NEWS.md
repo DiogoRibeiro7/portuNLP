@@ -1,5 +1,14 @@
 # portuNLP News
 
+## 1.3.0
+
+Add Portuguese stemming.
+
+### Added
+* `stem_word()`, `stem_tokens()`, and `stem_text()` implementing the Snowball
+  (Porter2) Portuguese stemming algorithm. The implementation is validated to
+  match NLTK's `SnowballStemmer("portuguese")` across thousands of words.
+
 ## 1.2.0
 
 Expand the Portuguese language resources and add contraction handling.

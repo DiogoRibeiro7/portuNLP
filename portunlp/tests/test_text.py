@@ -35,6 +35,9 @@ from portunlp import (
     preprocess_text,
     rank_similar_texts,
     remove_emoji,
+    stem_text,
+    stem_tokens,
+    stem_word,
     term_frequencies,
     tokenize_text,
 )
@@ -103,6 +106,28 @@ def test_expand_contractions_handles_accents_and_custom_map() -> None:
     assert expand_contractions("co", custom_map={"co": "com o"}) == "com o"
     with pytest.raises(TypeError, match="`custom_map` must map strings to strings"):
         expand_contractions("do", custom_map={"do": 1})  # type: ignore[dict-item]
+
+
+def test_stem_word_matches_snowball_reference() -> None:
+    """Stemming reduces inflected forms (Snowball Portuguese algorithm)."""
+    assert stem_word("meninos") == "menin"
+    assert stem_word("rapidamente") == "rapid"
+    assert stem_word("trabalhador") == "trabalh"
+    assert stem_word("países") == "país"
+    assert stem_word("Cantando") == "cant"
+    assert stem_word("nação") == "naçã"
+
+
+def test_stem_tokens_and_text() -> None:
+    """Token- and text-level stemming preserve order."""
+    assert stem_tokens(["casas", "bonitas"]) == ["cas", "bonit"]
+    assert stem_text("Os gatos corriam felizes") == ["os", "gat", "corr", "feliz"]
+
+
+def test_stem_word_validates_type() -> None:
+    """Stemming rejects non-string input."""
+    with pytest.raises(TypeError, match="`word` must be a string"):
+        stem_word(123)  # type: ignore[arg-type]
 
 
 def test_generate_ngrams_builds_contiguous_sequences() -> None:

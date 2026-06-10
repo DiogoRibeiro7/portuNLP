@@ -23,6 +23,7 @@ from portunlp import (
     clean_social_text,
     compare_texts,
     compute_inverse_document_frequency,
+    convert_variant,
     expand_contractions,
     extract_keywords,
     filter_stopwords,
@@ -160,6 +161,20 @@ def test_analyze_sentiment_validates_window() -> None:
     """A negative negation window is rejected."""
     with pytest.raises(ValueError, match="`negation_window` must be non-negative"):
         analyze_sentiment("texto", negation_window=-1)
+
+
+def test_convert_variant_both_directions() -> None:
+    """Orthography converts between European and Brazilian Portuguese."""
+    assert convert_variant("O facto é económico") == "O fato é econômico"
+    assert convert_variant("O fato é econômico", to="pt") == "O facto é económico"
+    assert convert_variant("Esse aspeto da receção") == "Esse aspecto da recepção"
+
+
+def test_convert_variant_preserves_case_and_validates() -> None:
+    """Capitalization is preserved and unknown variants are rejected."""
+    assert convert_variant("ANTÓNIO e António") == "ANTÔNIO e Antônio"
+    with pytest.raises(ValueError, match="`to` must be one of"):
+        convert_variant("texto", to="xx")
 
 
 def test_generate_ngrams_builds_contiguous_sequences() -> None:

@@ -1,5 +1,14 @@
 # portuNLP News
 
+## 1.5.0
+
+Add European/Brazilian Portuguese variant conversion.
+
+### Added
+* `convert_variant()` and the `VARIANT_SPELLINGS` dataset for converting
+  orthography between European (PT-PT) and Brazilian (PT-BR) Portuguese, with
+  case preservation. Orthographic only (no lexical substitution).
+
 ## 1.4.0
 
 Add lexicon-based sentiment analysis.

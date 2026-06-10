@@ -55,6 +55,7 @@ print(analysis_to_json(result))
 | `apply_orthographic_rules(text, rules=None) -> str` | Apply built-in (or supplied) orthographic replacement rules. |
 | `map_slang(text, custom_map=None) -> str` | Replace slang terms with standard forms. |
 | `expand_contractions(text, custom_map=None) -> str` | Expand preposition contractions (`do` → `de o`, `na` → `em a`, `pelos` → `por os`). |
+| `convert_variant(text, *, to="br") -> str` | Convert orthography between European and Brazilian Portuguese (`facto`↔`fato`). |
 | `clean_social_text(text, *, emoji=True, accents=True, slang=True, custom_map=None) -> str` | Combined social-media cleaning pipeline. |
 
 ### Tokenization & stopwords
@@ -176,6 +177,8 @@ python -m spacy download pt_core_news_sm
 |------|------|
 | `PORTUGUESE_STOPWORDS` | `tuple[str, ...]` |
 | `PORTUGUESE_CONTRACTIONS` | `dict[str, str]` |
+| `PORTUGUESE_SENTIMENT_LEXICON` | `dict[str, float]` |
+| `VARIANT_SPELLINGS` | `tuple[tuple[str, str], ...]` |
 | `SLANG_MAP` | `dict[str, str]` |
 | `ORTHOGRAPHIC_RULES` | `tuple[tuple[str, str], ...]` |
 | `POS_TAG_MAP` | `dict[str, str]` |

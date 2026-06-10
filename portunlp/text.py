@@ -24,6 +24,7 @@ from ._data import (
     SENTIMENT_INTENSIFIERS,
     SENTIMENT_NEGATIONS,
     SLANG_MAP,
+    VARIANT_SPELLINGS,
 )
 from ._stemmer import snowball_stem
 
@@ -569,6 +570,63 @@ def expand_contractions(text: str, custom_map: Mapping[str, str] | None = None) 
     for term in sorted(replacements, key=len, reverse=True):
         pattern = re.compile(_WORD_BOUNDARY_TEMPLATE.format(term=re.escape(term)), flags=re.IGNORECASE)
         result = pattern.sub(replacements[term], result)
+    return result
+
+
+def _match_case(matched: str, replacement: str) -> str:
+    """Apply the capitalization pattern of ``matched`` to ``replacement``.
+
+    Args:
+        matched (str): The originally matched text.
+        replacement (str): The lower-case replacement.
+
+    Returns:
+        str: The replacement with matching capitalization.
+    """
+    if matched.isupper():
+        return replacement.upper()
+    if matched[:1].isupper():
+        return replacement[:1].upper() + replacement[1:]
+    return replacement
+
+
+def convert_variant(text: str, *, to: str = "br") -> str:
+    """Convert orthography between European and Brazilian Portuguese.
+
+    Applies the bundled :data:`VARIANT_SPELLINGS` mapping for known orthographic
+    differences (for example ``facto``/``fato`` and ``económico``/``econômico``).
+    Matching is case-insensitive and capitalization is preserved. This is an
+    orthographic conversion only; it does not handle lexical differences such as
+    ``comboio``/``trem``.
+
+    Args:
+        text (str): Input text.
+        to (str): Target variant: ``"br"`` (Brazilian) or ``"pt"``/``"eu"``
+            (European).
+
+    Returns:
+        str: Text converted to the target variant.
+
+    Raises:
+        ValueError: If ``to`` is not a recognized variant.
+    """
+    result = _ensure_text(text)
+    target = to.lower()
+    if target in ("br", "brazilian", "pt-br"):
+        source_index, target_index = 0, 1
+    elif target in ("pt", "eu", "european", "pt-pt"):
+        source_index, target_index = 1, 0
+    else:
+        raise ValueError("`to` must be one of 'br', 'pt', or 'eu'")
+
+    for pair in VARIANT_SPELLINGS:
+        source, destination = pair[source_index], pair[target_index]
+        pattern = re.compile(_WORD_BOUNDARY_TEMPLATE.format(term=re.escape(source)), flags=re.IGNORECASE)
+
+        def _replace(match: "re.Match[str]", dest: str = destination) -> str:
+            return _match_case(match.group(0), dest)
+
+        result = pattern.sub(_replace, result)
     return result
 
 

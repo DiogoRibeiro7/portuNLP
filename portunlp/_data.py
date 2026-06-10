@@ -512,6 +512,45 @@ SENTIMENT_INTENSIFIERS: dict[str, float] = {
     "ligeiramente": 0.5,
 }
 
+# European (PT-PT) <-> Brazilian (PT-BR) orthographic differences that persist
+# after the 1990 Orthographic Agreement. Each pair is (european, brazilian).
+# This covers the systematic acute/circumflex split before nasals (ó/ô, é/ê) and
+# consonant clusters that European Portuguese dropped but Brazilian keeps. It is
+# orthographic only and does not handle lexical differences (e.g. comboio/trem).
+VARIANT_SPELLINGS: tuple[tuple[str, str], ...] = (
+    # acute (PT) vs circumflex (BR) before a nasal consonant
+    ("antónio", "antônio"),
+    ("bónus", "bônus"),
+    ("económico", "econômico"),
+    ("económica", "econômica"),
+    ("fenómeno", "fenômeno"),
+    ("fenómenos", "fenômenos"),
+    ("génio", "gênio"),
+    ("tónico", "tônico"),
+    ("tónica", "tônica"),
+    ("ténis", "tênis"),
+    ("cómodo", "cômodo"),
+    ("cómico", "cômico"),
+    ("oxigénio", "oxigênio"),
+    ("higiénico", "higiênico"),
+    ("académico", "acadêmico"),
+    ("académica", "acadêmica"),
+    ("quilómetro", "quilômetro"),
+    ("cénico", "cênico"),
+    ("gémeo", "gêmeo"),
+    ("gémeos", "gêmeos"),
+    ("ónus", "ônus"),
+    # consonants pronounced (BR) vs dropped (PT) after the 1990 agreement
+    ("facto", "fato"),
+    ("contacto", "contato"),
+    ("aspeto", "aspecto"),
+    ("receção", "recepção"),
+    ("conceção", "concepção"),
+    ("perceção", "percepção"),
+    ("deteção", "detecção"),
+    ("infeção", "infecção"),
+)
+
 POS_TAG_MAP: dict[str, str] = {
     "NOUN": "NOUN",
     "VERB": "VERB",

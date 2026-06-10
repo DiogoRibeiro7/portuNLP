@@ -1,6 +1,6 @@
 """Portuguese NLP helpers for Python."""
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 from .api import (
     CorpusAnalysis,
@@ -17,6 +17,7 @@ from ._data import (
     PORTUGUESE_STOPWORDS,
     POS_TAG_MAP,
     SLANG_MAP,
+    VARIANT_SPELLINGS,
 )
 from ._spacy import (
     SpacyCollocation,
@@ -75,6 +76,7 @@ from .text import (
     clean_social_text,
     compare_texts,
     compute_inverse_document_frequency,
+    convert_variant,
     cpp_acceleration_available,
     expand_contractions,
     extract_keywords,
@@ -105,6 +107,7 @@ __all__ = [
     "PORTUGUESE_SENTIMENT_LEXICON",
     "PORTUGUESE_STOPWORDS",
     "POS_TAG_MAP",
+    "VARIANT_SPELLINGS",
     "CorpusStatistics",
     "CorpusAnalysis",
     "KeywordScore",
@@ -146,6 +149,7 @@ __all__ = [
     "clean_social_text",
     "compare_texts",
     "compute_inverse_document_frequency",
+    "convert_variant",
     "cpp_acceleration_available",
     "expand_contractions",
     "extract_keywords",

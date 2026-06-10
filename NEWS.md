@@ -1,5 +1,15 @@
 # portuNLP News
 
+## 1.4.0
+
+Add lexicon-based sentiment analysis.
+
+### Added
+* `analyze_sentiment()` and the `SentimentScore` result type: a lexicon-based
+  polarity estimator with negation and intensifier handling and
+  accent-insensitive matching.
+* The `PORTUGUESE_SENTIMENT_LEXICON` dataset (compact, hand-curated).
+
 ## 1.3.0
 
 Add Portuguese stemming.

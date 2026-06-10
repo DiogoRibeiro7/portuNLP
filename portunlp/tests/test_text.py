@@ -15,6 +15,7 @@ from portunlp import (
     analysis_to_dict,
     analysis_to_json,
     analyze_text,
+    analyze_sentiment,
     analyze_text_metrics,
     analyze_texts,
     analyze_corpus,
@@ -128,6 +129,37 @@ def test_stem_word_validates_type() -> None:
     """Stemming rejects non-string input."""
     with pytest.raises(TypeError, match="`word` must be a string"):
         stem_word(123)  # type: ignore[arg-type]
+
+
+def test_analyze_sentiment_basic_polarity() -> None:
+    """Positive and negative texts get the expected labels and polarity."""
+    positive = analyze_sentiment("Este produto é excelente e maravilhoso!")
+    assert positive.label == "positive"
+    assert positive.polarity == 1.0
+    assert positive.positive_tokens == 2
+
+    negative = analyze_sentiment("O atendimento foi péssimo e horrível.")
+    assert negative.label == "negative"
+    assert negative.polarity == -1.0
+    assert negative.negative_tokens == 2
+
+    neutral = analyze_sentiment("A reunião começou às nove horas.")
+    assert neutral.label == "neutral"
+    assert neutral.polarity == 0.0
+
+
+def test_analyze_sentiment_handles_negation_and_intensifiers() -> None:
+    """Negation inverts polarity and intensifiers scale it."""
+    assert analyze_sentiment("Não gostei do filme.").polarity == -0.7
+    assert analyze_sentiment("O serviço foi muito bom.").polarity == 1.0
+    # Unaccented spelling still matches the lexicon.
+    assert analyze_sentiment("Que filme otimo").label == "positive"
+
+
+def test_analyze_sentiment_validates_window() -> None:
+    """A negative negation window is rejected."""
+    with pytest.raises(ValueError, match="`negation_window` must be non-negative"):
+        analyze_sentiment("texto", negation_window=-1)
 
 
 def test_generate_ngrams_builds_contiguous_sequences() -> None:

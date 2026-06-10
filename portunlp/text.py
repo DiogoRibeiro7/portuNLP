@@ -18,8 +18,11 @@ from typing import Literal, Mapping
 from ._data import (
     ORTHOGRAPHIC_RULES,
     PORTUGUESE_CONTRACTIONS,
+    PORTUGUESE_SENTIMENT_LEXICON,
     PORTUGUESE_STOPWORDS,
     POS_TAG_MAP,
+    SENTIMENT_INTENSIFIERS,
+    SENTIMENT_NEGATIONS,
     SLANG_MAP,
 )
 from ._stemmer import snowball_stem
@@ -223,6 +226,25 @@ class TextStatistics:
     syllable_count: int
     average_syllables_per_word: float
     flesch_reading_ease: float
+
+
+@dataclass(frozen=True)
+class SentimentScore:
+    """Lexicon-based sentiment result for a text.
+
+    Attributes:
+        polarity (float): Mean polarity of scored words, in [-1.0, 1.0].
+        label (str): "positive", "negative", or "neutral".
+        positive_tokens (int): Number of tokens with a positive contribution.
+        negative_tokens (int): Number of tokens with a negative contribution.
+        token_count (int): Total number of tokens analyzed.
+    """
+
+    polarity: float
+    label: str
+    positive_tokens: int
+    negative_tokens: int
+    token_count: int
 
 
 def _ensure_text(value: str, *, name: str = "text") -> str:
@@ -732,6 +754,101 @@ def stem_text(text: str) -> list[str]:
         list[str]: Stemmed tokens, in order.
     """
     return [snowball_stem(token) for token in tokenize_text(_ensure_text(text))]
+
+
+def _fold(value: str) -> str:
+    """Accent-fold and lowercase a token for sentiment lookups.
+
+    Args:
+        value (str): Token to fold.
+
+    Returns:
+        str: Lower-case, accent-folded token.
+    """
+    return normalize_accents(value).lower()
+
+
+# Accent-folded lookups so unaccented spellings also match the lexicon.
+_SENTIMENT_LEXICON_FOLDED = {_fold(word): score for word, score in PORTUGUESE_SENTIMENT_LEXICON.items()}
+_SENTIMENT_NEGATIONS_FOLDED = frozenset(_fold(word) for word in SENTIMENT_NEGATIONS)
+_SENTIMENT_INTENSIFIERS_FOLDED = {_fold(word): factor for word, factor in SENTIMENT_INTENSIFIERS.items()}
+
+
+def analyze_sentiment(text: str, *, negation_window: int = 3) -> SentimentScore:
+    """Estimate sentiment polarity with a lexicon-based approach.
+
+    Tokens are matched against a bundled polarity lexicon. A preceding
+    intensifier (for example "muito") scales the next sentiment word, and a
+    preceding negation (for example "não") inverts the polarity of the next
+    ``negation_window`` sentiment words. Matching is accent-insensitive.
+
+    Args:
+        text (str): Input text.
+        negation_window (int): Number of following words a negation affects.
+
+    Returns:
+        SentimentScore: Structured sentiment result.
+
+    Raises:
+        ValueError: If ``negation_window`` is negative.
+    """
+    if negation_window < 0:
+        raise ValueError("`negation_window` must be non-negative")
+
+    tokens = tokenize_text(_ensure_text(text))
+
+    total = 0.0
+    positive_tokens = 0
+    negative_tokens = 0
+    scored_tokens = 0
+    negation_remaining = 0
+    multiplier = 1.0
+
+    for token in tokens:
+        folded = _fold(token)
+
+        if folded in _SENTIMENT_NEGATIONS_FOLDED:
+            negation_remaining = negation_window
+            multiplier = 1.0
+            continue
+
+        if folded in _SENTIMENT_INTENSIFIERS_FOLDED:
+            multiplier *= _SENTIMENT_INTENSIFIERS_FOLDED[folded]
+            continue
+
+        if folded in _SENTIMENT_LEXICON_FOLDED:
+            score = _SENTIMENT_LEXICON_FOLDED[folded] * multiplier
+            if negation_remaining > 0:
+                score = -score
+                negation_remaining -= 1
+            total += score
+            scored_tokens += 1
+            if score > 0:
+                positive_tokens += 1
+            elif score < 0:
+                negative_tokens += 1
+            multiplier = 1.0
+        else:
+            multiplier = 1.0
+            if negation_remaining > 0:
+                negation_remaining -= 1
+
+    polarity = total / scored_tokens if scored_tokens else 0.0
+    polarity = max(-1.0, min(1.0, polarity))
+    if polarity > 0.05:
+        label = "positive"
+    elif polarity < -0.05:
+        label = "negative"
+    else:
+        label = "neutral"
+
+    return SentimentScore(
+        polarity=polarity,
+        label=label,
+        positive_tokens=positive_tokens,
+        negative_tokens=negative_tokens,
+        token_count=len(tokens),
+    )
 
 
 def preprocess_text(

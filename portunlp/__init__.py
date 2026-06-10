@@ -1,6 +1,6 @@
 """Portuguese NLP helpers for Python."""
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 from .api import (
     CorpusAnalysis,
@@ -13,6 +13,7 @@ from .api import (
 from ._data import (
     ORTHOGRAPHIC_RULES,
     PORTUGUESE_CONTRACTIONS,
+    PORTUGUESE_SENTIMENT_LEXICON,
     PORTUGUESE_STOPWORDS,
     POS_TAG_MAP,
     SLANG_MAP,
@@ -64,8 +65,10 @@ from .text import (
     CorpusStatistics,
     KeywordScore,
     ProcessedText,
+    SentimentScore,
     SimilarityScore,
     TextStatistics,
+    analyze_sentiment,
     analyze_text_metrics,
     analyze_corpus,
     apply_orthographic_rules,
@@ -99,12 +102,14 @@ from .text import (
 __all__ = [
     "ORTHOGRAPHIC_RULES",
     "PORTUGUESE_CONTRACTIONS",
+    "PORTUGUESE_SENTIMENT_LEXICON",
     "PORTUGUESE_STOPWORDS",
     "POS_TAG_MAP",
     "CorpusStatistics",
     "CorpusAnalysis",
     "KeywordScore",
     "ProcessedText",
+    "SentimentScore",
     "SimilarityScore",
     "TextAnalysis",
     "TextStatistics",
@@ -132,6 +137,7 @@ __all__ = [
     "SpacyToken",
     "analysis_to_dict",
     "analysis_to_json",
+    "analyze_sentiment",
     "analyze_text",
     "analyze_texts",
     "analyze_corpus",

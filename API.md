@@ -85,6 +85,15 @@ Native Snowball (Porter2) Portuguese stemmer; output matches NLTK's
 | `stem_tokens(tokens) -> list[str]` | Stem a token sequence. |
 | `stem_text(text) -> list[str]` | Tokenize then stem each token. |
 
+### Sentiment
+
+Lexicon-based polarity with negation and intensifier handling
+(accent-insensitive). Result type: `SentimentScore`.
+
+| Name | Summary |
+|------|---------|
+| `analyze_sentiment(text, *, negation_window=3) -> SentimentScore` | Estimate polarity (`-1.0`–`1.0`) and a `positive`/`negative`/`neutral` label. |
+
 ### Preprocessing, statistics & similarity
 | Name | Summary |
 |------|---------|

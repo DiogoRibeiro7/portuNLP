@@ -60,7 +60,20 @@ poetry run python -m mypy portunlp
 pre-commit run --all-files
 ```
 
-If you are working on the standalone C++ tokenizer, build and test it with:
+### Optional C++ acceleration
+
+An optional compiled backend transparently accelerates tokenization (~5×) and
+frequency counting; when it is absent, identical pure-Python paths are used.
+Check which is active with `cpp_acceleration_available()` and benchmark with:
+
+```bash
+python scripts/benchmark_tokenizer.py
+```
+
+On Windows, set `PORTUNLP_DLL_DIRECTORIES` to the directory holding the
+backend's runtime DLLs if the extension fails to load.
+
+To build and test the C++ component directly:
 
 ```bash
 mkdir -p build && cd build

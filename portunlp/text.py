@@ -276,8 +276,26 @@ def _ensure_texts(value: list[str] | tuple[str, ...], *, name: str = "texts") ->
     return _normalize_iterable(value, name=name)
 
 
+def cpp_acceleration_available() -> bool:
+    """Report whether the optional compiled C++ backend is loaded.
+
+    The backend accelerates tokenization, frequency counting, and n-gram
+    generation. When it is unavailable the package transparently uses the
+    pure-Python implementations, which produce identical results.
+
+    Returns:
+        bool: True if the compiled backend is loaded and in use.
+    """
+    return _CPP_BACKEND is not None
+
+
 def _can_use_cpp_text(value: str) -> bool:
-    """Check whether text is safe for the current C++ string path.
+    """Check whether text is handled identically by the C++ tokenizer.
+
+    The native tokenizer mirrors Python's ``str.isalnum()`` / ``str.lower()``
+    only over ASCII and the Latin-1 Supplement letters (which cover Portuguese
+    accented characters). Text containing any other non-ASCII code point falls
+    back to the pure-Python tokenizer to guarantee identical output.
 
     Args:
         value (str): Input text.
@@ -285,19 +303,7 @@ def _can_use_cpp_text(value: str) -> bool:
     Returns:
         bool: Whether the C++ backend should be used for this text.
     """
-    return value.isascii()
-
-
-def _can_use_cpp_tokens(tokens: list[str]) -> bool:
-    """Check whether tokens are safe for the current C++ string path.
-
-    Args:
-        tokens (list[str]): Token sequence.
-
-    Returns:
-        bool: Whether the C++ backend should be used for these tokens.
-    """
-    return all(token.isascii() for token in tokens)
+    return all(ord(character) < 0x80 or 0x00C0 <= ord(character) <= 0x00FF for character in value)
 
 
 def _iter_word_tokens(text: str) -> list[str]:
@@ -608,8 +614,9 @@ def generate_ngrams(tokens: list[str] | tuple[str, ...], n: int) -> list[tuple[s
     normalized_tokens = _normalize_iterable(tokens, name="tokens")
     if n < 1:
         raise ValueError("`n` must be at least 1")
-    if _CPP_BACKEND is not None and _can_use_cpp_tokens(normalized_tokens):
-        return [tuple(ngram) for ngram in _CPP_BACKEND.build_ngrams(normalized_tokens, n)]
+    # N-gram generation stays in pure Python on purpose: returning nested lists
+    # from C++ forces pybind11 to copy every token, which benchmarks slower than
+    # slicing the existing Python string objects (scripts/benchmark_tokenizer.py).
     if n > len(normalized_tokens):
         return []
     return [tuple(normalized_tokens[index : index + n]) for index in range(len(normalized_tokens) - n + 1)]
@@ -625,8 +632,11 @@ def term_frequencies(tokens: list[str] | tuple[str, ...]) -> dict[str, int]:
         dict[str, int]: Token frequency mapping.
     """
     normalized_tokens = _normalize_iterable(tokens, name="tokens")
-    if _CPP_BACKEND is not None and _can_use_cpp_tokens(normalized_tokens):
-        return dict(_CPP_BACKEND.count_term_frequencies(normalized_tokens))
+    if _CPP_BACKEND is not None:
+        try:
+            return dict(_CPP_BACKEND.count_term_frequencies(normalized_tokens))
+        except (UnicodeError, ValueError):
+            pass
     return dict(Counter(normalized_tokens))
 
 

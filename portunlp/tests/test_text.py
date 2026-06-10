@@ -405,6 +405,20 @@ def test_text_helpers_validate_argument_types() -> None:
         map_slang("texto", custom_map={"vc": 1})  # type: ignore[dict-item]
 
 
+def test_cpp_acceleration_available_returns_bool() -> None:
+    """The capability predicate reflects whether the backend is loaded."""
+    from portunlp import cpp_acceleration_available
+
+    assert isinstance(cpp_acceleration_available(), bool)
+    assert cpp_acceleration_available() is (text_module._CPP_BACKEND is not None)
+
+
+def test_tokenize_text_lowercases_accented_portuguese() -> None:
+    """Tokenization lowercases accented letters via either backend."""
+    assert tokenize_text("Olá MUNDO Coração") == ["olá", "mundo", "coração"]
+    assert tokenize_text("ÀÇÃO São João") == ["àção", "são", "joão"]
+
+
 def test_cpp_backend_is_optional() -> None:
     """The compiled backend is optional and either absent or a usable module."""
     backend = text_module._CPP_BACKEND
@@ -417,3 +431,27 @@ def test_cpp_backend_is_optional() -> None:
         ["a", "b"],
         ["b", "c"],
     ]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Olá Mundo! Tudo BEM?",
+        "Coração, ÇÃO, àÀ êÊ õÕ úÚ.",
+        "São Paulo é ótimo; não é?",
+        "MAIÚSCULAS e minúsculas 123 números",
+        "Ele disse «olá» — e partiu até logo.",
+        "a×b e c÷d não são palavras",
+    ],
+)
+def test_cpp_tokenizer_matches_pure_python(text: str) -> None:
+    """The native tokenizer is byte-for-byte equivalent to the Python path."""
+    backend = text_module._CPP_BACKEND
+    if backend is None:
+        pytest.skip("compiled C++ backend not available in this environment")
+    expected = text_module._iter_word_tokens(text)
+    # Public API must agree regardless of which path the guard selects.
+    assert tokenize_text(text) == expected
+    # Where the guard routes to C++, the backend output must match exactly.
+    if text_module._can_use_cpp_text(text):
+        assert list(backend.split_words(text)) == expected

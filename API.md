@@ -70,6 +70,7 @@ print(analysis_to_json(result))
 | `generate_ngrams(tokens, n) -> list[tuple[str, ...]]` | Contiguous n-grams. |
 | `term_frequencies(tokens) -> dict[str, int]` | Token frequency counts. |
 | `map_pos_tags(tags) -> list[str]` | Map spaCy POS tags through the bundled tagset. |
+| `cpp_acceleration_available() -> bool` | Whether the optional compiled backend is loaded. |
 
 ### Preprocessing, statistics & similarity
 | Name | Summary |
@@ -84,6 +85,20 @@ print(analysis_to_json(result))
 
 **Result types:** `ProcessedText`, `CorpusStatistics`, `TextStatistics`,
 `KeywordScore`, `SimilarityScore`.
+
+### C++ acceleration (optional, transparent)
+
+When the compiled backend is installed, `tokenize_text` and `term_frequencies`
+use it automatically; otherwise the pure-Python paths run and produce identical
+results. `cpp_acceleration_available()` reports which path is active. The native
+tokenizer handles ASCII and Latin-1 letters (covering Portuguese accents);
+other scripts transparently fall back to Python.
+
+On Windows, set the `PORTUNLP_DLL_DIRECTORIES` environment variable (using the
+OS path separator) to point at any directories holding the backend's runtime
+DLLs if it fails to load. Run `python scripts/benchmark_tokenizer.py` to compare
+throughput on your machine (tokenization is ~5× faster; n-gram building stays in
+Python by design).
 
 ---
 

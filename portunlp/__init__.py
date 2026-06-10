@@ -1,6 +1,6 @@
 """Portuguese NLP helpers for Python."""
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 from .api import (
     CorpusAnalysis,
@@ -66,6 +66,7 @@ from .text import (
     clean_social_text,
     compare_texts,
     compute_inverse_document_frequency,
+    cpp_acceleration_available,
     extract_keywords,
     filter_stopwords,
     generate_ngrams,
@@ -128,6 +129,7 @@ __all__ = [
     "clean_social_text",
     "compare_texts",
     "compute_inverse_document_frequency",
+    "cpp_acceleration_available",
     "extract_keywords",
     "filter_stopwords",
     "generate_ngrams",

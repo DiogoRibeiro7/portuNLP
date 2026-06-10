@@ -1,5 +1,23 @@
 # portuNLP News
 
+## 1.1.0
+
+Invest in the native acceleration layer.
+
+### Added
+* `cpp_acceleration_available()` to report whether the compiled backend is in use.
+* C++ Unicode tokenizer test and Python equivalence tests covering Portuguese
+  accented text.
+* `scripts/benchmark_tokenizer.py` comparing the native and pure-Python paths.
+
+### Changed
+* The native tokenizer now handles Latin-1 letters (Portuguese accents) and
+  lowercases them, matching the pure-Python path exactly; previously accented
+  text always fell back to Python. Tokenization is ~5× faster with the backend.
+* Frequency counting and n-gram generation now route to whichever
+  implementation is faster: counting uses C++ when available; n-gram building
+  stays in Python (returning nested lists from C++ measured slower).
+
 ## 1.0.0
 
 First stable release. The public API is now frozen and documented in

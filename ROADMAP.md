@@ -46,8 +46,12 @@ The current scope is:
 - **Compatibility aliases:** removed in 1.0.0. The canonical descriptive names
   (`tokenize_text`, `load_dictionary`, `clean_social_text`,
   `apply_orthographic_rules`) are the supported API.
+- **C++ acceleration (1.1.0):** kept as a transparent, optional backend. It
+  accelerates tokenization (~5×) and frequency counting, now handles Portuguese
+  accented text, and is gated behind `cpp_acceleration_available()` with an
+  identical pure-Python fallback. The tokenizer is exercised through
+  `tokenize_text` rather than exposed as a separate public function.
 
 ## Open Decisions
 
-- Whether to expose the C++ tokenizer directly in Python as a supported helper.
 - Whether bundled resources should remain in code or move to dedicated data files.

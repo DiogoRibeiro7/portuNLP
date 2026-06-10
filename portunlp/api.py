@@ -124,6 +124,7 @@ def analyze_text(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = False,
     use_spacy: bool = False,
+    stem: bool = False,
     keyword_top_k: int = 10,
     include_spacy: bool = False,
     include_spacy_lexicon: bool = False,
@@ -140,6 +141,7 @@ def analyze_text(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords from the token list.
         use_spacy (bool): Whether to use spaCy tokenization in text preprocessing.
+        stem (bool): Whether to Snowball-stem tokens for metrics and keywords.
         keyword_top_k (int): Maximum number of keywords to return.
         include_spacy (bool): Whether to include a structured spaCy document summary.
         include_spacy_lexicon (bool): Whether to include a spaCy lexical summary.
@@ -157,6 +159,7 @@ def analyze_text(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
     metrics = analyze_text_metrics(
         text,
@@ -166,6 +169,7 @@ def analyze_text(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
     keywords = extract_keywords(
         text,
@@ -176,6 +180,7 @@ def analyze_text(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
 
     spacy_document = None
@@ -212,6 +217,7 @@ def analyze_texts(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = False,
     use_spacy: bool = False,
+    stem: bool = False,
     ngram_size: int = 2,
     include_spacy: bool = False,
     include_spacy_lexicon: bool = False,
@@ -228,6 +234,7 @@ def analyze_texts(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords from token lists.
         use_spacy (bool): Whether to use spaCy tokenization in text preprocessing.
+        stem (bool): Whether to Snowball-stem tokens for statistics and IDF.
         ngram_size (int): Size of n-grams for aggregate statistics.
         include_spacy (bool): Whether to include a structured spaCy corpus summary.
         include_spacy_lexicon (bool): Whether to include a spaCy lexical corpus summary.
@@ -247,6 +254,7 @@ def analyze_texts(
             custom_map=custom_map,
             remove_stopwords=remove_stopwords,
             use_spacy=use_spacy,
+            stem=stem,
         )
         for text in normalized_texts
     ]
@@ -258,6 +266,7 @@ def analyze_texts(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
         ngram_size=ngram_size,
     )
     idf_values = compute_inverse_document_frequency(
@@ -268,6 +277,7 @@ def analyze_texts(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
 
     spacy_corpus = None

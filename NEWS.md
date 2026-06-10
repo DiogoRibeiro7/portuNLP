@@ -1,5 +1,17 @@
 # portuNLP News
 
+## 1.7.0
+
+Wire stemming into the analysis pipeline.
+
+### Added
+* A `stem` option on `preprocess_text`, `analyze_corpus`,
+  `compute_inverse_document_frequency`, `extract_keywords`, `compare_texts`,
+  `rank_similar_texts`, `analyze_text_metrics`, `analyze_text`, `analyze_texts`,
+  and a `--stem` CLI flag. When enabled, tokens are Snowball-stemmed so that
+  inflected forms of the same root group together for keyword extraction and
+  similarity scoring.
+
 ## 1.6.0
 
 Broaden the sentiment lexicon.

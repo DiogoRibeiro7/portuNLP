@@ -918,6 +918,7 @@ def preprocess_text(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = False,
     use_spacy: bool = False,
+    stem: bool = False,
 ) -> ProcessedText:
     """Run a high-level Portuguese preprocessing pipeline.
 
@@ -929,6 +930,7 @@ def preprocess_text(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords from the token list.
         use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        stem (bool): Whether to Snowball-stem the resulting tokens.
 
     Returns:
         ProcessedText: Structured preprocessing output.
@@ -964,6 +966,12 @@ def preprocess_text(
     # Tokens are accent-folded by normalize_text, so match stopwords
     # accent-insensitively to also catch entries like "não" or "às".
     filtered_tokens = filter_stopwords(tokens, normalize=True) if remove_stopwords else list(tokens)
+    if stem:
+        # Stemming runs after stopword removal so stopwords match their surface
+        # forms; the same folding+stemming applies to every document, keeping
+        # keyword and similarity comparisons consistent.
+        tokens = [snowball_stem(token) for token in tokens]
+        filtered_tokens = [snowball_stem(token) for token in filtered_tokens]
     return ProcessedText(
         original_text=original_text,
         normalized_text=normalized_text,
@@ -982,6 +990,7 @@ def analyze_corpus(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = False,
     use_spacy: bool = False,
+    stem: bool = False,
     ngram_size: int = 2,
 ) -> CorpusStatistics:
     """Aggregate token and n-gram statistics for multiple texts.
@@ -994,6 +1003,7 @@ def analyze_corpus(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords before aggregation.
         use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        stem (bool): Whether to Snowball-stem the resulting tokens.
         ngram_size (int): Size of contiguous n-grams to count.
 
     Returns:
@@ -1012,6 +1022,7 @@ def analyze_corpus(
             custom_map=custom_map,
             remove_stopwords=remove_stopwords,
             use_spacy=use_spacy,
+            stem=stem,
         )
         for text in normalized_texts
     ]
@@ -1044,6 +1055,7 @@ def compute_inverse_document_frequency(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = False,
     use_spacy: bool = False,
+    stem: bool = False,
 ) -> dict[str, float]:
     """Compute smoothed inverse document frequency values for a corpus.
 
@@ -1055,6 +1067,7 @@ def compute_inverse_document_frequency(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords before scoring.
         use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        stem (bool): Whether to Snowball-stem the resulting tokens.
 
     Returns:
         dict[str, float]: Smoothed IDF values by token.
@@ -1073,6 +1086,7 @@ def compute_inverse_document_frequency(
             custom_map=custom_map,
             remove_stopwords=remove_stopwords,
             use_spacy=use_spacy,
+            stem=stem,
         )
         source_tokens = processed.filtered_tokens if remove_stopwords else processed.tokens
         document_frequencies.update(set(source_tokens))
@@ -1095,6 +1109,7 @@ def extract_keywords(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = True,
     use_spacy: bool = False,
+    stem: bool = False,
 ) -> list[KeywordScore]:
     """Extract weighted keywords from a text using TF-IDF-style scoring.
 
@@ -1108,6 +1123,8 @@ def extract_keywords(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords before scoring.
         use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        stem (bool): Whether to Snowball-stem tokens before scoring (groups
+            inflected forms of the same root).
 
     Returns:
         list[KeywordScore]: Ranked keyword scores.
@@ -1123,6 +1140,7 @@ def extract_keywords(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
     tokens = processed.filtered_tokens if remove_stopwords else processed.tokens
     if not tokens:
@@ -1138,6 +1156,7 @@ def extract_keywords(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
 
     token_count = len(tokens)
@@ -1161,6 +1180,7 @@ def _build_tfidf_vector(
     custom_map: Mapping[str, str] | None,
     remove_stopwords: bool,
     use_spacy: bool,
+    stem: bool,
 ) -> dict[str, float]:
     """Build a TF-IDF vector for a single document.
 
@@ -1173,6 +1193,7 @@ def _build_tfidf_vector(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords before scoring.
         use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        stem (bool): Whether to Snowball-stem tokens before scoring.
 
     Returns:
         dict[str, float]: TF-IDF vector keyed by token.
@@ -1185,6 +1206,7 @@ def _build_tfidf_vector(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
     tokens = processed.filtered_tokens if remove_stopwords else processed.tokens
     if not tokens:
@@ -1199,6 +1221,7 @@ def _build_tfidf_vector(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
     token_count = len(tokens)
     return {
@@ -1241,6 +1264,7 @@ def compare_texts(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = True,
     use_spacy: bool = False,
+    stem: bool = False,
 ) -> float:
     """Compare two texts with cosine similarity over TF-IDF vectors.
 
@@ -1254,6 +1278,7 @@ def compare_texts(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords before scoring.
         use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        stem (bool): Whether to Snowball-stem tokens before scoring.
 
     Returns:
         float: Cosine similarity score in the range [0.0, 1.0].
@@ -1273,6 +1298,7 @@ def compare_texts(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
     right_vector = _build_tfidf_vector(
         second_text,
@@ -1283,6 +1309,7 @@ def compare_texts(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
     return _cosine_similarity(left_vector, right_vector)
 
@@ -1298,6 +1325,7 @@ def rank_similar_texts(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = True,
     use_spacy: bool = False,
+    stem: bool = False,
 ) -> list[SimilarityScore]:
     """Rank corpus documents by similarity to a query document.
 
@@ -1311,6 +1339,7 @@ def rank_similar_texts(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords before scoring.
         use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        stem (bool): Whether to Snowball-stem tokens before scoring.
 
     Returns:
         list[SimilarityScore]: Ranked similarity matches.
@@ -1333,6 +1362,7 @@ def rank_similar_texts(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
 
     scored_documents = [
@@ -1350,6 +1380,7 @@ def rank_similar_texts(
                     custom_map=custom_map,
                     remove_stopwords=remove_stopwords,
                     use_spacy=use_spacy,
+                    stem=stem,
                 ),
             ),
         )
@@ -1367,6 +1398,7 @@ def analyze_text_metrics(
     custom_map: Mapping[str, str] | None = None,
     remove_stopwords: bool = False,
     use_spacy: bool = False,
+    stem: bool = False,
 ) -> TextStatistics:
     """Compute descriptive and readability metrics for a text.
 
@@ -1378,6 +1410,7 @@ def analyze_text_metrics(
         custom_map (Mapping[str, str] | None): Optional slang overrides.
         remove_stopwords (bool): Whether to remove stopwords before analysis.
         use_spacy (bool): Whether to use spaCy tokenization and sentence segmentation.
+        stem (bool): Whether to Snowball-stem the resulting tokens.
 
     Returns:
         TextStatistics: Structured text metrics.
@@ -1390,6 +1423,7 @@ def analyze_text_metrics(
         custom_map=custom_map,
         remove_stopwords=remove_stopwords,
         use_spacy=use_spacy,
+        stem=stem,
     )
     tokens = processed.filtered_tokens if remove_stopwords else processed.tokens
     sentence_count = len(processed.sentences)

@@ -132,6 +132,25 @@ def test_stem_word_validates_type() -> None:
         stem_word(123)  # type: ignore[arg-type]
 
 
+def test_stem_option_in_preprocess_and_keywords() -> None:
+    """The stem flag stems pipeline tokens and groups inflected keywords."""
+    assert preprocess_text("gatos correndo", stem=True).tokens == ["gat", "corr"]
+    keywords = extract_keywords(
+        "correr correndo corremos feliz",
+        stem=True,
+        remove_stopwords=False,
+        top_k=2,
+    )
+    assert keywords[0].token == "corr"
+
+
+def test_stem_option_groups_inflections_in_similarity() -> None:
+    """Stemming lets inflected forms match in similarity scoring."""
+    a, b = "o gato corria", "os gatos correram"
+    assert compare_texts(a, b) == 0.0
+    assert compare_texts(a, b, stem=True) == pytest.approx(1.0)
+
+
 def test_analyze_sentiment_basic_polarity() -> None:
     """Positive and negative texts get the expected labels and polarity."""
     positive = analyze_sentiment("Este produto é excelente e maravilhoso!")

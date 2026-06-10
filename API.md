@@ -86,6 +86,11 @@ Native Snowball (Porter2) Portuguese stemmer; output matches NLTK's
 | `stem_tokens(tokens) -> list[str]` | Stem a token sequence. |
 | `stem_text(text) -> list[str]` | Tokenize then stem each token. |
 
+The preprocessing/analysis functions (`preprocess_text`, `extract_keywords`,
+`compare_texts`, `rank_similar_texts`, `analyze_corpus`, `analyze_text`,
+`analyze_texts`, …) accept a `stem=True` option (and the CLI a `--stem` flag) to
+stem tokens so inflected forms group together for keyword and similarity work.
+
 ### Sentiment
 
 Lexicon-based polarity with negation and intensifier handling

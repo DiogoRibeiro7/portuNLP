@@ -21,6 +21,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--social", action="store_true", help="Apply social-text cleaning before normalization.")
     parser.add_argument("--remove-stopwords", action="store_true", help="Remove stopwords from token sequences.")
     parser.add_argument("--use-spacy", action="store_true", help="Use spaCy tokenization in preprocessing.")
+    parser.add_argument("--stem", action="store_true", help="Snowball-stem tokens before analysis.")
     parser.add_argument("--include-spacy", action="store_true", help="Include structured spaCy analysis output.")
     parser.add_argument(
         "--include-spacy-lexicon",
@@ -150,6 +151,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             social=args.social,
             remove_stopwords=args.remove_stopwords,
             use_spacy=args.use_spacy,
+            stem=args.stem,
             keyword_top_k=args.keyword_top_k,
             include_spacy=args.include_spacy,
             include_spacy_lexicon=args.include_spacy_lexicon,
@@ -168,6 +170,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             social=args.social,
             remove_stopwords=args.remove_stopwords,
             use_spacy=args.use_spacy,
+            stem=args.stem,
             ngram_size=args.ngram_size,
             include_spacy=args.include_spacy,
             include_spacy_lexicon=args.include_spacy_lexicon,

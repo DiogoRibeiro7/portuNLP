@@ -1,5 +1,14 @@
 # portuNLP News
 
+## 1.6.0
+
+Broaden the sentiment lexicon.
+
+### Changed
+* `PORTUGUESE_SENTIMENT_LEXICON` expanded from ~145 to ~300 entries, adding
+  more evaluative adjectives, nouns, and verbs (with common inflections) across
+  both polarities.
+
 ## 1.5.0
 
 Add European/Brazilian Portuguese variant conversion.

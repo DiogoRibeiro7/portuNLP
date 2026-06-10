@@ -54,6 +54,7 @@ print(analysis_to_json(result))
 | `remove_emoji(text) -> str` | Strip emoji characters. |
 | `apply_orthographic_rules(text, rules=None) -> str` | Apply built-in (or supplied) orthographic replacement rules. |
 | `map_slang(text, custom_map=None) -> str` | Replace slang terms with standard forms. |
+| `expand_contractions(text, custom_map=None) -> str` | Expand preposition contractions (`do` → `de o`, `na` → `em a`, `pelos` → `por os`). |
 | `clean_social_text(text, *, emoji=True, accents=True, slang=True, custom_map=None) -> str` | Combined social-media cleaning pipeline. |
 
 ### Tokenization & stopwords
@@ -153,9 +154,14 @@ python -m spacy download pt_core_news_sm
 | Name | Type |
 |------|------|
 | `PORTUGUESE_STOPWORDS` | `tuple[str, ...]` |
+| `PORTUGUESE_CONTRACTIONS` | `dict[str, str]` |
 | `SLANG_MAP` | `dict[str, str]` |
 | `ORTHOGRAPHIC_RULES` | `tuple[tuple[str, str], ...]` |
 | `POS_TAG_MAP` | `dict[str, str]` |
+
+Resource provenance is documented in `portunlp/_data.py`: stopwords are curated
+from NLTK and stopwords-iso; contractions enumerate the preposition +
+article/determiner forms; slang and orthographic rules are hand-curated.
 
 ---
 

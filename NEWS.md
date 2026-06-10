@@ -1,5 +1,26 @@
 # portuNLP News
 
+## 1.2.0
+
+Expand the Portuguese language resources and add contraction handling.
+
+### Added
+* `expand_contractions()` and the `PORTUGUESE_CONTRACTIONS` dataset, expanding
+  preposition contractions (`do` → `de o`, `na` → `em a`, `àquele` → `a aquele`).
+* Documented provenance for the bundled resources in `portunlp/_data.py`.
+
+### Changed
+* `PORTUGUESE_STOPWORDS` expanded from ~40 to ~200 entries (curated from NLTK
+  and stopwords-iso), including the common conjugations of *ser*/*estar*/
+  *haver*/*ter*.
+* `SLANG_MAP` expanded with more frequent internet abbreviations.
+* `ORTHOGRAPHIC_RULES` extended with more pre-/post-AO90 spellings.
+
+### Fixed
+* Stopword removal in the preprocessing pipeline is now accent-insensitive, so
+  accented stopwords such as `não`, `à`, and `você` are removed from the
+  accent-folded token stream (previously they leaked through).
+
 ## 1.1.0
 
 Invest in the native acceleration layer.

@@ -1,6 +1,6 @@
 """Portuguese NLP helpers for Python."""
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 from .api import (
     CorpusAnalysis,
@@ -10,7 +10,13 @@ from .api import (
     analyze_text,
     analyze_texts,
 )
-from ._data import ORTHOGRAPHIC_RULES, PORTUGUESE_STOPWORDS, POS_TAG_MAP, SLANG_MAP
+from ._data import (
+    ORTHOGRAPHIC_RULES,
+    PORTUGUESE_CONTRACTIONS,
+    PORTUGUESE_STOPWORDS,
+    POS_TAG_MAP,
+    SLANG_MAP,
+)
 from ._spacy import (
     SpacyCollocation,
     SpacyCollocationCorpus,
@@ -67,6 +73,7 @@ from .text import (
     compare_texts,
     compute_inverse_document_frequency,
     cpp_acceleration_available,
+    expand_contractions,
     extract_keywords,
     filter_stopwords,
     generate_ngrams,
@@ -88,6 +95,7 @@ from .text import (
 
 __all__ = [
     "ORTHOGRAPHIC_RULES",
+    "PORTUGUESE_CONTRACTIONS",
     "PORTUGUESE_STOPWORDS",
     "POS_TAG_MAP",
     "CorpusStatistics",
@@ -130,6 +138,7 @@ __all__ = [
     "compare_texts",
     "compute_inverse_document_frequency",
     "cpp_acceleration_available",
+    "expand_contractions",
     "extract_keywords",
     "filter_stopwords",
     "generate_ngrams",

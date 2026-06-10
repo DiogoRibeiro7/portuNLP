@@ -22,6 +22,7 @@ from portunlp import (
     clean_social_text,
     compare_texts,
     compute_inverse_document_frequency,
+    expand_contractions,
     extract_keywords,
     filter_stopwords,
     generate_ngrams,
@@ -82,6 +83,28 @@ def test_filter_stopwords_removes_configured_words() -> None:
     assert filter_stopwords(["ação", "bonita"], stopwords={"acao"}, normalize=True) == ["bonita"]
 
 
+def test_preprocess_removes_accented_stopwords() -> None:
+    """Accent-folded tokens still match accented stopwords like 'não'/'à'."""
+    result = preprocess_text("Eu não vou à praia mas você sim", remove_stopwords=True)
+    assert result.filtered_tokens == ["vou", "praia", "sim"]
+
+
+def test_expand_contractions_expands_known_forms() -> None:
+    """Preposition contractions expand to their two-word components."""
+    assert expand_contractions("Fui ao mercado do bairro") == "Fui a o mercado de o bairro"
+    assert expand_contractions("Está na casa da Maria") == "Está em a casa de a Maria"
+    assert expand_contractions("Penso nisso e naquilo") == "Penso em isso e em aquilo"
+    assert expand_contractions("Falei pelos cotovelos") == "Falei por os cotovelos"
+
+
+def test_expand_contractions_handles_accents_and_custom_map() -> None:
+    """Accented contractions expand and custom overrides apply."""
+    assert expand_contractions("Dei àquele homem") == "Dei a aquele homem"
+    assert expand_contractions("co", custom_map={"co": "com o"}) == "com o"
+    with pytest.raises(TypeError, match="`custom_map` must map strings to strings"):
+        expand_contractions("do", custom_map={"do": 1})  # type: ignore[dict-item]
+
+
 def test_generate_ngrams_builds_contiguous_sequences() -> None:
     """N-gram generation preserves order and contiguity."""
     assert generate_ngrams(["um", "dois", "tres"], 2) == [("um", "dois"), ("dois", "tres")]
@@ -120,7 +143,9 @@ def test_preprocess_text_builds_structured_result() -> None:
     assert result.normalized_text == "acao e voce "
     assert result.sentences == ["Acção e você!"]
     assert result.tokens == ["acao", "e", "voce"]
-    assert result.filtered_tokens == ["acao", "voce"]
+    # "e" and "você" (folded "voce") are stopwords; accent-insensitive filtering
+    # removes both, leaving the content word.
+    assert result.filtered_tokens == ["acao"]
 
 
 def test_preprocess_text_uses_native_sentence_segmentation_by_default() -> None:

@@ -15,7 +15,13 @@ from pathlib import Path
 import sys
 from typing import Literal, Mapping
 
-from ._data import ORTHOGRAPHIC_RULES, PORTUGUESE_STOPWORDS, POS_TAG_MAP, SLANG_MAP
+from ._data import (
+    ORTHOGRAPHIC_RULES,
+    PORTUGUESE_CONTRACTIONS,
+    PORTUGUESE_STOPWORDS,
+    POS_TAG_MAP,
+    SLANG_MAP,
+)
 
 _EMOJI_PATTERN = re.compile(
     "["
@@ -510,6 +516,39 @@ def map_slang(text: str, custom_map: Mapping[str, str] | None = None) -> str:
     return result
 
 
+def expand_contractions(text: str, custom_map: Mapping[str, str] | None = None) -> str:
+    """Expand Portuguese preposition contractions into their components.
+
+    Replaces whole-word contractions such as ``do`` -> ``de o``,
+    ``na`` -> ``em a``, ``pelos`` -> ``por os``, and ``àquele`` -> ``a aquele``.
+    Matching is case-insensitive and the expansion is emitted in lower case,
+    which suits downstream normalization. Longer contractions are applied first
+    so that, for example, ``daquele`` is not partially matched.
+
+    Args:
+        text (str): Input text.
+        custom_map (Mapping[str, str] | None): Optional additional or overriding
+            contraction-to-expansion mappings.
+
+    Returns:
+        str: Text with contractions expanded.
+
+    Raises:
+        TypeError: If ``custom_map`` contains non-string keys or values.
+    """
+    result = _ensure_text(text)
+    replacements = dict(PORTUGUESE_CONTRACTIONS)
+    if custom_map is not None:
+        if not all(isinstance(key, str) and isinstance(value, str) for key, value in custom_map.items()):
+            raise TypeError("`custom_map` must map strings to strings")
+        replacements.update(custom_map)
+
+    for term in sorted(replacements, key=len, reverse=True):
+        pattern = re.compile(_WORD_BOUNDARY_TEMPLATE.format(term=re.escape(term)), flags=re.IGNORECASE)
+        result = pattern.sub(replacements[term], result)
+    return result
+
+
 def clean_social_text(
     text: str,
     *,
@@ -705,7 +744,9 @@ def preprocess_text(
         sentences = tokenize_text(working_text, kind="sentence")
         tokens = tokenize_text(normalized_text, kind="word")
 
-    filtered_tokens = filter_stopwords(tokens, normalize=False) if remove_stopwords else list(tokens)
+    # Tokens are accent-folded by normalize_text, so match stopwords
+    # accent-insensitively to also catch entries like "não" or "às".
+    filtered_tokens = filter_stopwords(tokens, normalize=True) if remove_stopwords else list(tokens)
     return ProcessedText(
         original_text=original_text,
         normalized_text=normalized_text,
